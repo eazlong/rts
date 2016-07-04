@@ -1,0 +1,10 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = true
+[remote "origin"]
+	url = git@192.168.0.111:/home/git/repositories/realtime_translate_system
+	fetch = +refs/heads/*:refs/remotes/origin/*
+[remote "rts"]
+	url = https://github.com/eazlong/rts.git
+	fetch = +refs/heads/*:refs/remotes/rts/*

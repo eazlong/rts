@@ -1,0 +1,16 @@
+control: 
+{ 
+	anchor id;
+	language in;
+	language out;
+	audio start time;
+}
+
+return:
+{
+	anchor id:
+	asr:
+	translate:
+	start time:
+	end time:
+}

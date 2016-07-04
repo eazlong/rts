@@ -1,0 +1,19 @@
+<?xml version="1.0"?> 
+<config>
+	<audio_server>
+		<device>0.0.0.0</device>
+		<port>1935</port>
+	</audio_server>
+	<control_server>
+		<device>0.0.0.0</device>
+		<port>1936</port>
+	</control_server>
+
+	<thread>
+		<audio_process>10</audio_process>
+		<asr>10</asr>
+		<translate>10</translate>
+	</thread>
+
+	<audio_input format="speex" samplerate="8000" frame_size="160"></audio_input>
+</config>

@@ -1,0 +1,1 @@
+g++ http/translate_client.cpp test_translate.c -o trans -lcurl -I./http

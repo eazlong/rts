@@ -1,0 +1,2 @@
+g++ ../server/tcp_server.cpp ../server/tcp_server.h test_tcp_svr.c -o test_svr -I../server
+g++ ../thread/thread_pool.cpp test_thread_pool.c -o test_thrd -I../thread
