@@ -14,3 +14,6 @@ return:
 	start time:
 	end time:
 }
+
+create database rts;
+create table log (anchor_id varchar(10), language_in varchar(10), language_out varchar(10), start_time time, end_time time, asr_result varchar(1024) COLLATE utf8_unicode_ci, asr_start_time datetime, asr_end_time datetime, trans_result varchar(1024) COLLATE utf8_unicode_ci, trans_start_time datetime, trans_end_time datetime )

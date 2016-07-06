@@ -42,6 +42,14 @@ namespace server
 
 	typedef struct 
 	{
+		std::string streaming_start;
+		std::string asr_start;
+		std::string translate_start;
+		std::string translate_end;
+	}process_time;
+
+	typedef struct 
+	{
 	  unsigned long start_time;
 	  unsigned long end_time;
 	  std::string anchor_id;
@@ -50,6 +58,7 @@ namespace server
 	  std::string file_name;
 	  std::string asr_result;
 	  std::map<std::string, std::string> trans_result;
+	  process_time time;
 	}result;
 
 	class control_data_processor

@@ -36,6 +36,8 @@ using namespace server;
 #include "thread.h"
 #include "thread_pool.h"
 using namespace thread;
+#include "db.h"
+using namespace db;
 
 #include "config.h"
 #include "config_content.h"
@@ -65,6 +67,8 @@ typedef struct
 
   pthread_mutex_t anchor_fd_lock;
   std::map<std::string, int> anchor_fd;
+
+  db::db mysql;
 }srv_info;
 
 srv_info g_srv_info;
@@ -94,6 +98,14 @@ void get_support_language()
   }
 }
 
+std::string get_local_time()
+{
+  time_t t = time( NULL );
+  char buf[32];
+  strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", localtime(&t) );
+  return buf;
+}
+
 void asr_process( void* param )
 {
   result* r = (result*)param;
@@ -102,6 +114,7 @@ void asr_process( void* param )
   LOG( log::LOGDEBUG, "asr file %s, result %s!\n", r->file_name.c_str(), r->asr_result.c_str() );
   printf( "asr file %s, result %s!\n", r->file_name.c_str(), r->asr_result.c_str() );
   remove( r->file_name.c_str() );
+  r->time.translate_start=get_local_time();
   if ( r->language_out == "ALL" )
   {
     pthread_mutex_t* lock = new pthread_mutex_t;
@@ -145,6 +158,20 @@ void translate_process( void* param )
     pthread_mutex_lock( t->result_lock );  
   }
   t->res->trans_result.insert( std::make_pair(t->language_out, trans_result) );
+  char time_buf_start[32];
+  strftime(time_buf_start, sizeof(time_buf_start), "%H:%M:%S", localtime((time_t*)&t->res->start_time));
+  char time_buf_end[32];
+  strftime(time_buf_end, sizeof(time_buf_end), "%H:%M:%S", localtime((time_t*)&t->res->end_time));
+  std::string log = "\"" + t->res->anchor_id + "\"," + 
+              "\"" + t->res->language_in + "\"," +
+              "\"" + t->language_out + "\"," +
+              "\"" + time_buf_start + "\"," + 
+              "\"" + time_buf_end + "\"," + 
+              "\"" + t->res->asr_result + "\"," +
+              "\"" + t->res->time.asr_start + "\",\"" + t->res->time.translate_start + "\"," + 
+              "\"" + trans_result + "\"," + 
+              "\"" + t->res->time.translate_start + "\",\"" + get_local_time() + "\"";
+  g_srv_info.mysql.insert( "log", log );
   if ( t->res->language_out == "ALL" 
     && t->res->trans_result.size() < ALL_LANGUAGE.size() )
   {
@@ -252,6 +279,7 @@ void rtmp_process( void* param )
       r->file_name = file;
       r->language_in = cmd.language_in;
       r->language_out = cmd.language_out;
+      r->time.asr_start=get_local_time();
 
       g_srv_info.asr_thrds->do_message( r );
     }
@@ -461,6 +489,11 @@ int main(int argc, char **argv)
 
   g_srv_info.svr_audio   = NULL;
   g_srv_info.audio_thrds = NULL;
+  if ( db::db::SUCCESS != g_srv_info.mysql.connect( "127.0.0.1", 0, "root", "3721", "rts" ) )
+  {
+    printf("%s\n", "connect to db failed!" );
+    return -1;
+  }
 
   g_srv_info.log_level = log::LOGINFO;
   pthread_mutex_init( &g_srv_info.anchor_fd_lock, NULL );
