@@ -16,6 +16,8 @@
 #include <sys/socket.h>
 #include <sys/times.h>
 #include <netdb.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -114,6 +116,12 @@ void asr_process( void* param )
   LOG( log::LOGDEBUG, "asr file %s, result %s!\n", r->file_name.c_str(), r->asr_result.c_str() );
   printf( "asr file %s, result %s!\n", r->file_name.c_str(), r->asr_result.c_str() );
   remove( r->file_name.c_str() );
+  if ( r->asr_result.empty() )
+  {
+    delete r;
+    return;
+  }
+
   r->time.translate_start=get_local_time();
   if ( r->language_out == "ALL" )
   {
@@ -217,10 +225,11 @@ void rtmp_process( void* param )
 
   printf( "process data from %d!\n", info->client_fd );
 
-  int frame_size = config_content::get_instance()->audio_info.frame_size;
   int sample_rate = config_content::get_instance()->audio_info.samplerate;
-  speex_audio_processor* audio = new speex_audio_processor( frame_size, sample_rate );
-  audio_data_processor* processor = new audio_data_processor( audio );
+  speex_audio_processor* audio = new speex_audio_processor( sample_rate );
+  ogg_encode* encoder = new ogg_encode();
+  audio_data_processor* processor = new audio_data_processor( audio, encoder );
+
   rtmp_connection* conn = new rtmp_connection( processor, g_srv_info.log_level );
   if ( rtmp_connection::FAILED == conn->handshake( info->client_fd ) )
   {
@@ -228,6 +237,7 @@ void rtmp_process( void* param )
     g_srv_info.svr_audio->remove_client_fd( info->client_fd );
     g_srv_info.svr_audio->close( info->client_fd );
 
+    delete encoder;
     delete audio;
     delete processor;
     conn->cleanup();
@@ -258,6 +268,16 @@ void rtmp_process( void* param )
     std::string file;
     if ( conn->get_data_processor()->get_audio_status(file) == 2 )
     {
+      struct stat buf;
+      if( 0 == stat(__FILE__,&buf) )
+      {
+        if ( buf.st_size == 0 )
+        {
+          remove( file.c_str() );
+          continue;
+        }
+      }
+
       std::string anchor_id = conn->get_id();
       pthread_mutex_lock( &g_stream_info_lock );
       std::map<std::string,start_command>::iterator it_stream = g_stream_info.find(anchor_id);
@@ -285,6 +305,7 @@ void rtmp_process( void* param )
     }
   }
 
+  delete encoder;
   delete audio;
   delete processor;
   conn->cleanup();

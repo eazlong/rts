@@ -1,19 +1,19 @@
 <?xml version="1.0"?> 
 <config>
-	<audio_server>
-		<device>0.0.0.0</device>
-		<port>1935</port>
+	<audio_server desc="接收语音流使用的服务器设备，可以与控制服务器分开以提高语音流接收性能">
+		<device desc="语音流接收网卡设备">0.0.0.0</device>
+		<port desc="语音流接收端口">1935</port>
 	</audio_server>
-	<control_server>
-		<device>0.0.0.0</device>
-		<port>1936</port>
+	<control_server desc="接收控制指令使用的服务器">
+		<device desc="控制指令使用的网卡设备">0.0.0.0</device>
+		<port desc="控制指令使用的端口">1936</port>
 	</control_server>
 
 	<thread>
-		<audio_process>10</audio_process>
-		<asr>10</asr>
-		<translate>10</translate>
+		<audio_process desc="处理语音流使用的线程数">10</audio_process>
+		<asr desc="处理语音识别请求使用的线程数">20</asr>
+		<translate desc="处理翻译请求使用的线程数">10</translate>
 	</thread>
 
-	<audio_input format="speex" samplerate="8000" frame_size="160"></audio_input>
+	<audio_input desc="输入语音流的格式，目前只支持一种格式，请勿修改" format="speex" samplerate="8000" frame_size="160"></audio_input>
 </config>

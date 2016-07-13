@@ -1,1 +1,1 @@
-g++ test_publish_wav.c thread.c -o publish_wav -lpthread -lspeex -lspeexdsp /home/xialang/code/rtmp/rtmpdump/librtmp/librtmp.a
+g++ -o publish test_publish_wav.c -lrtmp -lspeex -lspeexdsp -lmysqlclient -lpthread

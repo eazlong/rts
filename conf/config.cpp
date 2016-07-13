@@ -46,7 +46,6 @@ int config::initialize()
 	}
 	config_content::get_instance()->audio_info.format = format;	
 	config_content::get_instance()->audio_info.samplerate = audio_input->IntAttribute("samplerate");
-	config_content::get_instance()->audio_info.frame_size = audio_input->IntAttribute("frame_size");
 
 	XMLElement *server = root->FirstChildElement( "audio_server" );
 	unsigned int port = 0;

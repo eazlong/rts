@@ -19,7 +19,6 @@ namespace http
 		{
 			curl_global_cleanup();
 		}
-		
 	};
 
 	class asr_client

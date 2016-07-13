@@ -1,7 +1,8 @@
 #include "asr_client.h"
 #include <curl/easy.h>
 #include <string.h>
-
+#include <errno.h>
+#define MTU_DEFAULT 1472
 namespace http
 {
 	curl_init asr_client::m_init;
@@ -18,8 +19,13 @@ namespace http
 
 	size_t asr_client::read_callback(void *ptr, size_t size, size_t nmemb, void *userp)
 	{
+		if ( userp == NULL )
+			return 0;
+
 		FILE* fp = (FILE*)userp;
-		return fread( ptr, size, nmemb, fp );
+		int rd = fread( ptr, size, MTU_DEFAULT, fp );
+		//fprintf(stdout, "size: %d %d\n", rd, nmemb );
+		return rd;
 	}
 
 	size_t asr_client::write_callback(void *ptr, size_t size, size_t nmemb, void *userp)
@@ -43,6 +49,14 @@ namespace http
 
 	int asr_client::asr( const std::string& file, std::string& out )
 	{
+		FILE *fp = fopen( file.c_str(), "rb" );
+		if ( fp == NULL )
+		{
+			printf( "open file %s fail: %d", file.c_str(), errno );
+			
+			return 1;
+		}
+
 		m_curl = curl_easy_init();
 
 		curl_easy_setopt(m_curl, CURLOPT_NOSIGNAL, 1);
@@ -60,7 +74,8 @@ namespace http
 		//curl_easy_setopt( m_curl, CURLOPT_VERBOSE, 1L ); 
 
 		struct curl_slist *headers = NULL;
-		headers = curl_slist_append( headers, "Content-Type:audio/x-wav;codec=pcm;bit=16;rate=8000" );
+		//headers = curl_slist_append( headers, "Content-Type:audio/x-wav;codec=pcm;bit=16;rate=8000" );
+		headers = curl_slist_append( headers, "Content-Type:audio/x-speex;rate=8000" );
 		headers = curl_slist_append( headers, "Accept:text/plain" );
 		std::string language = "Accept-Language:"+m_language_input;
 		headers = curl_slist_append( headers, language.c_str() );
@@ -70,7 +85,6 @@ namespace http
 		curl_easy_setopt( m_curl, CURLOPT_HEADER, 1L );
 		//curl_easy_setopt( m_curl, CURLOPT_COOKIEFILE, "/Users/zhu/CProjects/curlposttest.cookie");
 
-		FILE *fp = fopen( file.c_str(), "rb" );
 		curl_easy_setopt( m_curl, CURLOPT_READFUNCTION, read_callback );
 		curl_easy_setopt( m_curl, CURLOPT_READDATA, fp );
 

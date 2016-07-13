@@ -22,7 +22,6 @@ public:
 	{
 		std::string format;
 		int samplerate;
-		short frame_size;
 	}audio_input;
 	audio_input audio_info;
 

@@ -17,7 +17,7 @@ int main()
 		exit ( -1 ) ;
 	}
 /* 打开输出文件，失败则退出*/
-	if ( ( fd = open ("test1.wav",O_RDWR))<0){
+	if ( ( fd = open ("test1.wav",O_RDWR|O_CREAT))<0){
 		fprintf ( stderr, " Can't open output file!\n");
 		exit (-1 );
 	}
@@ -41,7 +41,7 @@ int main()
 	i=1;
 	ioctl (id,SNDCTL_DSP_PROFILE,(char *)&i);
 /* 读取一定数量的音频数据，并将之写到输出文件中去*/
-	for ( j=0; j<2;){
+	for ( j=0; j<10;){
 		i=read(id,testbuf,4096);
 		if(i>0){
 			write(fd,testbuf,i);

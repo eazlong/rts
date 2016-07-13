@@ -1,20 +1,11 @@
-/*implest Librtmp Send FLV 
-     * 
-     * 雷霄骅，张晖 
-     * leixiaohua1020@126.com 
-     * zhanghuicuc@gmail.com 
-     * 中国传媒大学/数字电视技术 
-     * Communication University of China / Digital TV Technology 
-     * http://blog.csdn.net/leixiaohua1020 
-     * 
-     * 本程序用于将FLV格式的视音频文件使用RTMP推送至RTMP流媒体服务器。 
-     * This program can send local flv file to net server as a rtmp live stream. 
-     */  
-
-    #include <stdio.h>  
+   #include <stdio.h>  
     #include <stdlib.h>  
     #include <string.h>  
-    #include <stdint.h>  
+    #include <stdint.h> 
+    #include <sys/soundcard.h>
+    #include <unistd.h>
+    #include <sys/ioctl.h>
+    #include <fcntl.h>
     #include <pthread.h>
     #ifndef WIN32  
     #include <unistd.h>  
@@ -34,7 +25,7 @@
      (x<<8&0xff0000)|(x<<24&0xff000000))  
     #define HTONTIME(x) ((x>>16&0xff)|(x<<16&0xff0000)|(x&0xff00)|(x&0xff000000))  
     
-    #define FRAME_SIZE 160
+    #define FRAME_SIZE 320
 
     /*read 1 byte*/  
     int ReadU8(uint32_t *u8,FILE*fp){  
@@ -145,12 +136,18 @@ int publish_using_packet( char* file_name )
   RTMP_debuglevel = loglvl;
   rtmp=RTMP_Alloc();  
   RTMP_Init(rtmp);  
+
+
+
+
   /* set log level */  
 
 //set connection timeout,default 30s  
   rtmp->Link.timeout=5;  
   char url[1024];    
-  sprintf( url, "%s", "rtmp://0.0.0.0:1935 conn=O:1 conn=NS:anchorid:99999999 conn=O:0" );                  
+  
+  sprintf( url, "%s", "rtmp://103.255.177.77:1935 conn=O:1 conn=NS:anchorid:99999999 conn=O:0" );                  
+  //sprintf( url, "%s", "rtmp://0.0.0.0:1935 conn=O:1 conn=NS:anchorid:99999999 conn=O:0" );                  
   if( !RTMP_SetupURL( rtmp, url ) )  
   {  
     RTMP_Log(RTMP_LOGERROR,"SetupURL Err\n");  
@@ -189,52 +186,85 @@ int publish_using_packet( char* file_name )
 
   RTMP_LogPrintf("Start to send data ...\n");  
 
-//jump over WAV header
+  //jump over WAV header
   fseek(fp,44,SEEK_SET);     
 
-    short in[FRAME_SIZE];  
-    short out[FRAME_SIZE];    
-    float input[FRAME_SIZE];  
-    float output[FRAME_SIZE];     
-    char cbits[200];  
+  short in[FRAME_SIZE];  
+  short out[FRAME_SIZE];    
+  float input[FRAME_SIZE];  
+  float output[FRAME_SIZE];     
+  char cbits[200];  
       
-    int nbBytes;  
+  int nbBytes;  
   void *stateEncode;  
-      void *stateDecode;  
+  void *stateDecode;  
 
-      SpeexBits bitsEncode;  
-      SpeexBits bitsDecode;     
+  SpeexBits bitsEncode;  
+  SpeexBits bitsDecode;     
 
-      int i, tmp;  
-          //新建一个新的编码状态在窄宽(narrowband)模式下  
-      stateEncode = speex_encoder_init(&speex_nb_mode);  
-      stateDecode = speex_decoder_init(&speex_nb_mode);  
-          //设置质量为8(15kbps)  
-      //tmp=0;  
-      //speex_encoder_ctl(stateEncode, SPEEX_SET_VBR, &tmp);  
-      /*float q=8;  
-      speex_encoder_ctl(stateEncode, SPEEX_SET_VBR_QUALITY, &q);  
-      */
-      tmp=8;
-      speex_encoder_ctl(stateEncode, SPEEX_SET_QUALITY, &tmp);  
+  int i, tmp;  
+      //新建一个新的编码状态在窄宽(narrowband)模式下  
+  stateEncode = speex_encoder_init(&speex_nb_mode);  
+  stateDecode = speex_decoder_init(&speex_nb_mode);  
 
-      speex_bits_init(&bitsEncode);  
-      //speex_bits_init(&bitsDecode); 
+  //设置质量为8(15kbps)  
+  //tmp=0;  
+  //speex_encoder_ctl(stateEncode, SPEEX_SET_VBR, &tmp);  
+  /*float q=8;  
+  speex_encoder_ctl(stateEncode, SPEEX_SET_VBR_QUALITY, &q);  
+  */
 
-      SpeexPreprocessState * m_st;  
+  tmp=8;
+  speex_encoder_ctl(stateEncode, SPEEX_SET_QUALITY, &tmp);  
 
-      m_st=speex_preprocess_state_init(FRAME_SIZE, 8000); 
+  speex_bits_init(&bitsEncode);  
+  //speex_bits_init(&bitsDecode); 
+
+  SpeexPreprocessState * m_st;  
+
+  m_st=speex_preprocess_state_init(FRAME_SIZE, 8000); 
 
 //jump over previousTagSizen  
 //fseek(fp,4,SEEK_CUR);     
   int j=0;
   start_time=RTMP_GetTime();  
   int packet_number = 0;
-  FILE* fspx = fopen( "test_file_org.spx", "wb" );
-  
+
+  //FILE* fspx = fopen( "test_file_org.spx", "wb" );
+
+
+  /* id：读取音频文件描述符；fd：写入的文件描述符。i，j为临时变量*/
+  int id;
+
+  /* 打开声卡设备，失败则退出*/
+  if ( ( id = open ( "/dev/dsp", O_RDWR ) ) < 0 ) {
+    fprintf (stderr, " Can't open sound device!\n");
+    exit ( -1 ) ;
+  }
+
+/* 设置适当的参数，使得声音设备工作正常*/
+/* 详细情况请参考Linux关于声卡编程的文档*/
+  i=0;
+  ioctl (id,SNDCTL_DSP_RESET,(char *)&i) ;
+  ioctl (id,SNDCTL_DSP_SYNC,(char *)&i);
+  //i=1;
+  //ioctl (id,SNDCTL_DSP_NONBLOCK,(char *)&i);
+  i=8000;
+  ioctl (id,SNDCTL_DSP_SPEED,(char *)&i);
+  i=1;
+  ioctl (id,SNDCTL_DSP_CHANNELS,(char *)&i);
+  i=16;
+  ioctl (id,SNDCTL_DSP_SETFMT,(char *)&i);
+  i=3;
+  ioctl (id,SNDCTL_DSP_SETTRIGGER,(char *)&i);
+  i=3;
+  ioctl (id,SNDCTL_DSP_SETFRAGMENT,(char *)&i);
+  i=1;
+  ioctl (id,SNDCTL_DSP_PROFILE,(char *)&i);
+
   while(1)  
   {  
-    if((((now_time=RTMP_GetTime())-start_time)<(pre_frame_time)) )
+/*    if((((now_time=RTMP_GetTime())-start_time)<(pre_frame_time)) )
     {          
     //wait for 1 sec if the send process is too fast  
     //this mechanism is not very good,need some improvement  
@@ -246,27 +276,16 @@ int publish_using_packet( char* file_name )
       usleep(20*1000);  
       continue;  
     }  
-
+*/
     //memset(out,0,FRAME_SIZE*sizeof(short));  
     //读入一帧16bits的声音  
-    j++;  
-    int r=fread(in, sizeof(short), FRAME_SIZE, fp);  
+    j++; 
+    int r=read( id, in, FRAME_SIZE );  
 
     if (r<FRAME_SIZE)  
       break;  
 
-/*   spx_int16_t * ptr=(spx_int16_t *)in;  
-
-    if (speex_preprocess_run(m_st, ptr))//预处理 打开了静音检测和降噪  
-    {  
-      printf("speech,");  
-    }  
-    else  
-    {  
-      printf("slience,");  
-    }
-
-  */  for (i=0;i<FRAME_SIZE;i++)  
+    for (i=0;i<FRAME_SIZE;i++)  
     {
       input[i]=in[i];
     }        
@@ -279,7 +298,7 @@ int publish_using_packet( char* file_name )
     //把bits拷贝到一个利用写出的char型数组  
     nbBytes = speex_bits_write(&bitsEncode, cbits, 200);  
     //fwrite(cbits, sizeof(char), nbBytes, fout1);  
-    fwrite( cbits, sizeof(char), nbBytes, fspx );
+   // fwrite( cbits, sizeof(char), nbBytes, fspx );
 
     packet->m_headerType = RTMP_PACKET_SIZE_LARGE;
     packet->m_nTimeStamp = 20;
@@ -300,13 +319,10 @@ int publish_using_packet( char* file_name )
     }  
     RTMP_Log( RTMP_LOGDEBUG, "packet_number %d", packet_number++ );
     //fseek(fp,FRAME_SIZE*sizeof(short),SEEK_CUR);  
-  }  
-  fclose( fspx );          
+  }    
 
 RTMP_LogPrintf("\nSend Data Over\n");  
-
-if(fp)  
-  fclose(fp);  
+close( id );
 
 if (rtmp!=NULL){  
   RTMP_Close(rtmp);          
@@ -358,7 +374,8 @@ int main(int argc, char* argv[])
   struct sockaddr_in addr; 
   addr.sin_family = AF_INET;  
   addr.sin_port = htons(1936);  
-  addr.sin_addr.s_addr = inet_addr("127.0.0.1");  
+  //addr.sin_addr.s_addr = inet_addr("127.0.0.1"); 
+  addr.sin_addr.s_addr = inet_addr("103.255.177.77"); 
 
   //创建套接字  
   int fd = socket(AF_INET, SOCK_STREAM, 0);  
@@ -384,8 +401,15 @@ int main(int argc, char* argv[])
   {  
       //接收数据 
       memset( buff, 0, sizeof(buff) );
-      recv( fd, buff, sizeof(buff), 0);  
-      printf("%s\n", buff);  
+      recv( fd, buff, sizeof(buff), 0);
+      char* asr = strstr( buff, "<asr>") + strlen("<asr>");
+      char* asr_end = strstr( buff, "</asr>");
+      char* trans = strstr( buff, "<en>")+strlen("<en>");
+      char* trans_end = strstr( buff, "</en>");
+      *asr_end = '\0';
+      *trans_end = '\0';
+
+      printf("识别结果:%s\n翻译结果:%s\n\n", asr, trans );  
       sleep( 1 );
   }  
 

@@ -1,16 +1,24 @@
 #include "speex_audio_processor.h"
 #include <stdio.h>
 #include <string.h>
+#include <speex/speex_header.h>
+
 namespace audio
 {
-	speex_audio_processor::speex_audio_processor( int frame_size, int sample_rate )
-	{
-		m_st=speex_preprocess_state_init(frame_size, sample_rate);
 
+	// bits/8*chanels*frame_size = size;
+	speex_audio_processor::speex_audio_processor( int sample_rate )
+		:m_sample_rate( sample_rate )
+	{
 		m_stateDecode = speex_decoder_init(&speex_nb_mode); 
 		m_stateEncode = speex_encoder_init(&speex_nb_mode);
     	speex_bits_init(&m_bitsDecode);  
     	speex_bits_init(&m_bitsEncode); 
+
+    	int frame_size;
+		speex_encoder_ctl(m_stateEncode, SPEEX_GET_FRAME_SIZE, &frame_size);
+    	m_st=speex_preprocess_state_init(frame_size, sample_rate);
+    	fprintf( stdout, "sample rate:%d, frame size:%d\n", sample_rate, frame_size );
 
     	m_serial_silence = -1;
     	m_frame_size = frame_size;
@@ -35,10 +43,10 @@ namespace audio
 		float q=4;  
 		speex_encoder_ctl(m_stateEncode, SPEEX_SET_VBR_QUALITY, &q);  
 		tmp = 8;
-		speex_encoder_ctl(m_stateEncode, SPEEX_SET_QUALITY, &tmp);  
+		speex_encoder_ctl(m_stateEncode, SPEEX_SET_QUALITY, &tmp);  	
  
 		int denoise = 1;  
-		int noiseSuppress = -10;  
+		int noiseSuppress = -25;  
 		speex_preprocess_ctl(m_st, SPEEX_PREPROCESS_SET_DENOISE, &denoise); //降噪  
 		speex_preprocess_ctl(m_st, SPEEX_PREPROCESS_SET_NOISE_SUPPRESS, &noiseSuppress); //设置噪声的dB  
 
@@ -46,7 +54,8 @@ namespace audio
 		q=24000;  
 		//actually default is 8000(0,32768),here make it louder for voice is not loudy enough by default. 8000  
 		speex_preprocess_ctl(m_st, SPEEX_PREPROCESS_SET_AGC, &agc);//增益  
-		speex_preprocess_ctl(m_st, SPEEX_PREPROCESS_SET_AGC_LEVEL,&q);  
+		speex_preprocess_ctl(m_st, SPEEX_PREPROCESS_SET_AGC_LEVEL,&q);
+
 		int vad = 1;  
 		int vadProbStart = 80;  
 		int vadProbContinue = 65;  
@@ -68,41 +77,38 @@ namespace audio
         {  
         	if ( m_serial_silence == -1 )
         	{
-        		return 0;
+        		return SUCCESS;
         	}
         	
             m_serial_silence ++;
             if ( m_serial_silence > MAX_SERIAL_SILENCE )
             {
-            	return 0;
+            	return SUCCESS;
             }
         }  
 
-        memcpy( m_buf+m_buf_size, m_decode_buf, m_frame_size*sizeof(short) );
-        m_buf_size += m_frame_size*sizeof(short);
+        //memcpy( m_buf+m_buf_size, m_decode_buf, m_frame_size*sizeof(short) );
+        //m_buf_size += m_frame_size*sizeof(short);
 
-        /*float input[m_frame_size];
+	    float input[m_frame_size];
+	    for (int i=0;i<m_frame_size;i++)  
+	    {
+	        input[i]=m_decode_buf[i]; 
+	    }
 
-        for (int i=0;i<m_frame_size;i++)  
-        {
-            input[i]=m_decode_buf[i]; 
-        }
+	    speex_bits_reset(&m_bitsEncode);  
+	    //对帧进行编码  
+	    speex_encode(m_stateEncode, input, &m_bitsEncode);  
+	    //把bits拷贝到一个利用写出的char型数组  
+	    int size = speex_bits_write(&m_bitsEncode, m_buf+m_buf_size, BUF_SIZE-m_buf_size);  
+	    m_buf_size += size;
 
-        speex_bits_reset(&m_bitsEncode);  
-        //对帧进行编码  
-        int ret=speex_encode(m_stateEncode, input, &m_bitsEncode);  
-        //把bits拷贝到一个利用写出的char型数组  
-        m_buf_size += speex_bits_write(&m_bitsEncode, m_buf+m_buf_size, BUF_SIZE-m_buf_size);  
-        printf("m_buf_size:%d\n", m_buf_size );
-        */
-
-        int ret = 0;
+        int ret = SUCCESS;
         if ( m_serial_silence >= MAX_SERIAL_SILENCE )
         {
         	ret = 2;
         }
 		
-
 		return ret;
 	}
 
@@ -124,5 +130,26 @@ namespace audio
 		delete [] output;
 
 		return ret;
+	}
+
+	int speex_audio_processor::get_processor_info( char* info, int* size )
+	{
+		//int mode = speex_lib_get_mode (SPEEX_MODEID_NB);
+		struct SpeexHeader header;
+		speex_init_header(&header, m_sample_rate, 1, &speex_nb_mode);
+		header.frames_per_packet = 1;
+		header.vbr = 1;
+		header.nb_channels = 1;
+		int header_size = 0;
+		char* hdr = speex_header_to_packet( &header, &header_size );
+		if ( *size < header_size )
+		{
+			*size = 0;
+			return FAILED;
+		}
+
+		memcpy( info, hdr, header_size );
+		*size = header_size;
+		return header_size;
 	}
 }

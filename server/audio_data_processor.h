@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rtmp_connection.h"
+#include "../audio/ogg_encode.h"
 #include "../audio/audio_processor.h"
 using namespace audio;
 
@@ -9,7 +10,7 @@ namespace server
 	class audio_data_processor: public rtmp_data_processor
 	{
 	public:
-		audio_data_processor( audio::audio_processor* process);
+		audio_data_processor( audio::audio_processor* process, audio::ogg_encode* ogg_encoder );
 		virtual ~audio_data_processor();
 
 		virtual int initialize();
@@ -22,6 +23,7 @@ namespace server
 		void write_wav_head( int length );
 	private:
 		audio::audio_processor* m_audio_processor;
+		audio::ogg_encode* m_ogg_encoder;
 		int m_audio_status;
 		int m_video_status;
 		FILE* m_file;

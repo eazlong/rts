@@ -1,10 +1,10 @@
-OBJS = realtime_translate_system.o thread.o audio_processor.o speex_audio_processor.o asr_client.o translate_client.o audio_data_processor.o \
-	rtmp_connection.o tcp_server.o thread_pool.o log.o config.o config_content.o tinyxml2.o control_data_processor.o
+OBJS = realtime_translate_system.o thread.o audio_processor.o speex_audio_processor.o ogg_encode.o asr_client.o translate_client.o audio_data_processor.o \
+	rtmp_connection.o tcp_server.o thread_pool.o log.o config.o config_content.o tinyxml2.o control_data_processor.o db.o
 CC = g++
-INC = -I./audio -I./http -I../rtmpdump -I./server -I./thread -I./log -I./conf -I./xml
-LIB = -lspeex -lspeexdsp -lpthread -lcurl -lrtmp
+INC = -I./audio -I./http -I../rtmpdump -I./server -I./thread -I./log -I./conf -I./xml -I./db
+LIB = -lspeex -lspeexdsp -lpthread -lcurl -lrtmp -lmysqlclient -logg
 #SLIB = /home/xialang/code/rtmp/rtmpdump/librtmp/librtmp.a
-CFLAGS = -Wall -O -g -D_DEBUG
+CFLAGS = -Wall -O0 -g -D_DEBUG
 TAGET = realtime_translate_system
 
 realtime_translate_system:$(OBJS)
@@ -14,6 +14,8 @@ realtime_translate_system.o:rtranslate_server.c
 thread.o:thread/thread.c
 	$(CC) $(CFLAGS) -c $< -o $@
 audio_processor.o:audio/audio_processor.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+ogg_encode.o:audio/ogg_encode.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 speex_audio_processor.o:audio/speex_audio_processor.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -38,6 +40,8 @@ config.o:conf/config.cpp
 config_content.o:conf/config_content.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 tinyxml2.o:xml/tinyxml2.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+db.o:db/db.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:

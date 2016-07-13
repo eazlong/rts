@@ -4,13 +4,16 @@
 
 namespace audio
 {
-#define MAX_SERIAL_SILENCE 6
+#define MAX_SERIAL_SILENCE 5
 
 	class speex_audio_processor : public audio_processor
 	{
 	public:
-		speex_audio_processor( int frame_size, int sample_rate );
+		speex_audio_processor( int sample_rate );
 		virtual ~speex_audio_processor();
+
+		virtual int get_processor_info( char* info, int* size );
+
 	protected:
 		virtual int decode( const char* buf, int size );
 		virtual int encode();
@@ -23,6 +26,7 @@ namespace audio
 		void* m_stateDecode;
 
 		int m_frame_size;
+		int m_sample_rate;
 		int m_serial_silence;
 
 		short m_decode_buf[1024];
