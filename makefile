@@ -1,5 +1,5 @@
-OBJS = realtime_translate_system.o thread.o audio_processor.o speex_audio_processor.o ogg_encode.o asr_client.o translate_client.o audio_data_processor.o \
-	rtmp_connection.o tcp_server.o thread_pool.o log.o config.o config_content.o tinyxml2.o control_data_processor.o db.o
+OBJS = realtime_translate_system.o thread.o audio_processor.o speex_audio_processor.o ogg_encode.o asr_client.o asr_client_baidu.o asr_client_nuance.o translate_client.o audio_data_processor.o \
+	rtmp_connection.o tcp_server.o thread_pool.o log.o config.o config_content.o tinyxml2.o control_data_processor.o db.o asr_client_manager.o http_client.o
 CC = g++
 INC = -I./audio -I./http -I../rtmpdump -I./server -I./thread -I./log -I./conf -I./xml -I./db
 LIB = -lspeex -lspeexdsp -lpthread -lcurl -lrtmp -lmysqlclient -logg
@@ -19,7 +19,15 @@ ogg_encode.o:audio/ogg_encode.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 speex_audio_processor.o:audio/speex_audio_processor.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
+http_client.o:http/http_client.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
 asr_client.o:http/asr_client.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+asr_client_baidu.o:http/asr_client_baidu.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+asr_client_nuance.o:http/asr_client_nuance.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+asr_client_manager.o:http/asr_client_manager.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 translate_client.o:http/translate_client.cpp
 	$(CC) $(CFLAGS) -c $< -o $@

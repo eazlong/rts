@@ -24,7 +24,7 @@ const int BUF_SIZE = 1024*1024;
 			process audio buffer: decode, noise reduction, then encode and punctuace
 			return value: 0 success, 1 failed, 2 speech end
 		*/
-		virtual int process( const char* buf, int size );
+		virtual int process( const char* buf, int size, const std::string& out_type="speex" );
 
 		/*
 			when process return 2, invoke this method to get a speech buffer for next step.
@@ -39,7 +39,7 @@ const int BUF_SIZE = 1024*1024;
 
 	protected:
 		virtual int decode( const char* buf, int size ) = 0;
-		virtual int encode() = 0;
+		virtual int encode( const std::string& out_type ) = 0;
 		
 		char m_buf[BUF_SIZE];
 		int  m_buf_size;

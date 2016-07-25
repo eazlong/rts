@@ -21,7 +21,14 @@ namespace server
 		virtual int get_video_status() const;
 	protected:
 		void write_wav_head( int length );
+		std::string get_out_file_suffix();
 	private:
+		enum out_type
+		{
+			PCM,
+			SPEEX
+		};
+
 		audio::audio_processor* m_audio_processor;
 		audio::ogg_encode* m_ogg_encoder;
 		int m_audio_status;
@@ -29,5 +36,6 @@ namespace server
 		FILE* m_file;
 		std::string m_file_name;
 		int m_file_size;
+		out_type m_out_type;
 	};
 }

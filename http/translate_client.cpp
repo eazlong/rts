@@ -1,6 +1,7 @@
 
 #include "translate_client.h"
 #include <string.h>
+#include <ctype.h>
 #include <curl/easy.h>
 
 namespace http
@@ -126,9 +127,37 @@ namespace http
 		return 0;
 	}
 
+    unsigned char ToHex(unsigned char x)   
+    {   
+        return  x > 9 ? x + 55 : x + 48;   
+    }  
+      
+    std::string UrlEncode(const std::string& str)  
+    {  
+        std::string strTemp = "";  
+        size_t length = str.length();  
+        for (size_t i = 0; i < length; i++)  
+        {  
+            if (isalnum((unsigned char)str[i]) ||   
+                (str[i] == '-') ||  
+                (str[i] == '_') ||   
+                (str[i] == '.') ||   
+                (str[i] == '~'))  
+                strTemp += str[i];  
+            else if (str[i] == ' ')  
+                strTemp += "+";  
+            else  
+            {  
+                strTemp += '%';  
+                strTemp += ToHex((unsigned char)str[i] >> 4);  
+                strTemp += ToHex((unsigned char)str[i] % 16);  
+            }  
+        }  
+        return strTemp;  
+    }  
 	std::string translate_client::get_translate_url( const std::string& in, const std::string& language_from, const std::string& language_to )
 	{
-		return TRANSLATE_URL+ "?text=" + in + "&from=" + language_from + "&to=" + language_to;
+		return TRANSLATE_URL+ "?text=" + UrlEncode(in) + "&from=" + language_from + "&to=" + language_to;
 	}
 
 }

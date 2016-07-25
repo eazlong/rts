@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <list>
 
 class config_content
 {
@@ -32,6 +33,28 @@ public:
 	}server;
 	server audio_svr;
 	server control_svr;
+
+	int log_level;
+
+	typedef struct translate_account_
+	{
+		std::string type;
+		std::string client_id;
+		std::string client_secret;
+	}translate_account;
+	std::list<translate_account> taccounts;
+
+	typedef struct  asr_account_
+	{
+		std::string type;
+		std::string id;
+		std::string appid;
+		std::string secret_key;
+		std::string accept_format;
+		long auth_interval;
+	}asr_account;
+	std::list<asr_account> aaccounts;
+
 private:
 	static config_content* m_instance;
 };

@@ -28,8 +28,10 @@
 using namespace b_log;
 #include "speex_audio_processor.h"  
 using namespace audio;
-#include "asr_client.h"
+#include "asr_client_baidu.h"
+#include "asr_client_nuance.h"
 #include "translate_client.h"
+#include "asr_client_manager.h"
 using namespace http;
 #include "tcp_server.h"
 #include "audio_data_processor.h"
@@ -71,6 +73,8 @@ typedef struct
   std::map<std::string, int> anchor_fd;
 
   db::db mysql;
+
+  asr_client_manager asr_manager;
 }srv_info;
 
 srv_info g_srv_info;
@@ -96,6 +100,8 @@ void get_support_language()
   while ( !fi.eof() )
   {
     fi >> str1 >> str2 >> str3;
+    if ( str1.at(1) == '#' )
+      continue;
     ALL_LANGUAGE.insert( std::make_pair(str1, str2) );
   }
 }
@@ -111,18 +117,26 @@ std::string get_local_time()
 void asr_process( void* param )
 {
   result* r = (result*)param;
-  asr_client a(ALL_LANGUAGE[r->language_in]);
-  a.asr( r->file_name, r->asr_result );
+  string type = "nunace";
+  if ( r->language_in=="en" || r->language_in=="zh-CHS" )
+  {
+    type = "baidu";
+  }
+  asr_client* a = g_srv_info.asr_manager.get_client( type );
+  a->asr( r->file_name, r->asr_result );
+  g_srv_info.asr_manager.set_client( type, a );
   LOG( log::LOGDEBUG, "asr file %s, result %s!\n", r->file_name.c_str(), r->asr_result.c_str() );
   printf( "asr file %s, result %s!\n", r->file_name.c_str(), r->asr_result.c_str() );
   remove( r->file_name.c_str() );
   if ( r->asr_result.empty() )
   {
+    printf("give message to translate %s\n", r->language_out.c_str() );
     delete r;
     return;
   }
-
+  printf("************** %s\n", r->language_out.c_str() );
   r->time.translate_start=get_local_time();
+
   if ( r->language_out == "ALL" )
   {
     pthread_mutex_t* lock = new pthread_mutex_t;
@@ -145,6 +159,7 @@ void asr_process( void* param )
     t->language_out = r->language_out;
     t->res = r;
     g_srv_info.trans_thrds->do_message( t );
+    printf("give message to translate\n" );
   }
 }
 
@@ -225,12 +240,12 @@ void rtmp_process( void* param )
 
   printf( "process data from %d!\n", info->client_fd );
 
+//to do
   int sample_rate = config_content::get_instance()->audio_info.samplerate;
   speex_audio_processor* audio = new speex_audio_processor( sample_rate );
   ogg_encode* encoder = new ogg_encode();
-  audio_data_processor* processor = new audio_data_processor( audio, encoder );
-
-  rtmp_connection* conn = new rtmp_connection( processor, g_srv_info.log_level );
+  audio_data_processor* processor = new audio_data_processor( audio, NULL );
+  rtmp_connection* conn = new rtmp_connection( processor, g_srv_info.log_level );//g_srv_info.log_level
   if ( rtmp_connection::FAILED == conn->handshake( info->client_fd ) )
   {
     printf( "handshake process error!\n" );
@@ -500,11 +515,21 @@ int main(int argc, char **argv)
   signal(SIGTTIN, SIG_IGN);// 后台程序尝试读操作  
   signal(SIGTERM, SIG_IGN);// 终止 
 
-  if ( -1 == daemon( 1, 1 ) )
+  // if ( -1 == daemon( 1, 0 ) )
+  // {
+  //   printf( "create daemon failed!\n");
+  //   return -1;
+  // }
+
+  //init config from config.xml
+  config cfg( "config.xml" );
+  if ( config::SUCCESS != cfg.initialize() )
   {
-    printf( "create daemon failed!\n");
+    printf( "init configuration failed\n" );
     return -1;
   }
+
+  g_srv_info.log_level = (log::log_level)config_content::get_instance()->log_level;
 
   get_support_language();
 
@@ -516,31 +541,15 @@ int main(int argc, char **argv)
     return -1;
   }
 
-  g_srv_info.log_level = log::LOGINFO;
   pthread_mutex_init( &g_srv_info.anchor_fd_lock, NULL );
   pthread_mutex_init( &g_stream_info_lock, NULL );
   pthread_mutex_init( &g_data_processor_lock, NULL );
-
-  for ( int i = 1; i < argc; i++ )
-  {
-    if (!strcmp(argv[i], "-z"))
-    {
-      g_srv_info.log_level = log::LOGALL;
-    }
-  }
 
   b_log::log l( "log.txt", g_srv_info.log_level );
   g_srv_info.log_file = &l;
 
   while ( 1 )
   {
-    config cfg( "config.xml" );
-    if ( config::SUCCESS != cfg.initialize() )
-    {
-      LOG( log::LOGERROR, "initialize config file failed!\n" );
-      break;
-    }
-
     config_content::thread &thds = config_content::get_instance()->thds;
 
     thread_pool audio_pool;
@@ -567,6 +576,13 @@ int main(int argc, char **argv)
       break;
     }
 
+    std::list<config_content::asr_account>& aas = config_content::get_instance()->aaccounts;
+    for ( std::list<config_content::asr_account>::iterator it=aas.begin(); it!=aas.end(); it++ )
+    {
+      g_srv_info.asr_manager.set_asr_account( (*it).type, (*it).id, (*it).appid, (*it).secret_key, 
+        (*it).accept_format, (*it).auth_interval );
+    }
+    
     const char *device = config_content::get_instance()->audio_svr.device.c_str();   // streaming device, default 0.0.0.0
     unsigned short port = config_content::get_instance()->audio_svr.port;    // port
     tcp_server svr_audio( device, port );

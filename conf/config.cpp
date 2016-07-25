@@ -63,6 +63,38 @@ int config::initialize()
 	}
 	config_content::get_instance()->control_svr.port = (unsigned short)port;
 	config_content::get_instance()->control_svr.device = server->FirstChildElement("device")->GetText();
+
+	XMLElement* log = root->FirstChildElement("log");
+	config_content::get_instance()->log_level = log->IntAttribute("level");
+
+	XMLElement* translate = root->FirstChildElement("translate");
+	XMLElement* ta = translate->FirstChildElement( "account" );
+	while ( ta != NULL )
+	{
+		config_content::translate_account trans_acc;
+		trans_acc.type = ta->Attribute("type");
+		trans_acc.client_id = ta->Attribute("client_id");
+		trans_acc.client_secret = ta->Attribute("client_secret");
+		config_content::get_instance()->taccounts.push_back( trans_acc );		
+		ta = translate->NextSiblingElement( "account" );
+	}
+	
+
+	XMLElement* asr = root->FirstChildElement("asr");
+	XMLElement* aa = asr->FirstChildElement( "account" );
+	while( aa != NULL )
+	{
+		config_content::asr_account asr_acc;
+		asr_acc.type = aa->Attribute("type");
+		asr_acc.id = aa->Attribute("id");
+		asr_acc.appid = aa->Attribute("appid");
+		asr_acc.secret_key = aa->Attribute("secret_key");
+		asr_acc.accept_format = aa->Attribute("accept_format");
+		asr_acc.auth_interval = (long)aa->IntAttribute("auth_interval");
+		config_content::get_instance()->aaccounts.push_back( asr_acc );
+		aa = asr->NextSiblingElement( "account" );		
+	}
+
 	return SUCCESS;
 }
 

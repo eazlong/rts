@@ -16,7 +16,7 @@ namespace audio
 
 	protected:
 		virtual int decode( const char* buf, int size );
-		virtual int encode();
+		virtual int encode( const std::string& out_type );
 		void preprocess_init();
 	private:
 		SpeexPreprocessState *m_st; 

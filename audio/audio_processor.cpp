@@ -14,7 +14,7 @@ namespace audio
 	
 	}
 
-	int audio_processor::process( const char* buf, int size )
+	int audio_processor::process( const char* buf, int size, const std::string& out_type )
 	{
 		int ret = decode( buf, size );
 		if ( ret == FAILED )
@@ -22,7 +22,7 @@ namespace audio
 			return ret;
 		}
 
-		return encode();;
+		return encode( out_type );
 	}
 
 	int audio_processor::get_speech_buf( char* buf, int* size ) 

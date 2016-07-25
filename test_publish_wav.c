@@ -401,15 +401,8 @@ int main(int argc, char* argv[])
   {  
       //接收数据 
       memset( buff, 0, sizeof(buff) );
-      recv( fd, buff, sizeof(buff), 0);
-      char* asr = strstr( buff, "<asr>") + strlen("<asr>");
-      char* asr_end = strstr( buff, "</asr>");
-      char* trans = strstr( buff, "<en>")+strlen("<en>");
-      char* trans_end = strstr( buff, "</en>");
-      *asr_end = '\0';
-      *trans_end = '\0';
-
-      printf("识别结果:%s\n翻译结果:%s\n\n", asr, trans );  
+      recv( fd, buff, sizeof(buff), 0);  
+      printf("%s\n", buff);  
       sleep( 1 );
   }  
 

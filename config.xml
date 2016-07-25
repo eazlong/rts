@@ -11,9 +11,20 @@
 
 	<thread>
 		<audio_process desc="处理语音流使用的线程数">10</audio_process>
-		<asr desc="处理语音识别请求使用的线程数">20</asr>
+		<asr desc="处理语音识别请求使用的线程数">10</asr>
 		<translate desc="处理翻译请求使用的线程数">10</translate>
 	</thread>
 
-	<audio_input desc="输入语音流的格式，目前只支持一种格式，请勿修改" format="speex" samplerate="8000" frame_size="160"></audio_input>
+	<audio_input desc="输入语音流的格式，目前只支持一种格式，请勿修改" format="speex" samplerate="8000"></audio_input>
+
+	<log level="0" desc="0 error, 3 info, 4 debug, 6 all" />
+
+	<translate>
+		<account type="microsoft" client_id="broadcast_trans" client_secret="11sN8ALEvHsoU7cxJVD%2f0pdvWe6mKn2YU96SUd%2f51Jc%3d"></account>
+	</translate>
+
+	<asr>
+		<account type="baidu" id="8402549" appid="1B0VyMpqOW44RiDGLj8fFpOk" secret_key="fd344a253bd2d309884693ff30b63854" accept_format="pcm" auth_interval="2592000"></account>
+		<account type="nuance" id="fc2jvf7p" appid="NMDPTRIAL_yangchuang_xrrjkj_cn20160523051623" secret_key="edf3cc49b90816be770f6855efe189eef24594f8dfc4a8d07771f7106a1c9f570f6ca0c874b686ebc5ef40b5d0caa3c20f37baeefb62be72d3b5823dd12194e0" accept_format="speex" auth_interval="2592000"></account>
+	</asr>
 </config>

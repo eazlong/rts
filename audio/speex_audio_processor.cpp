@@ -5,13 +5,26 @@
 
 namespace audio
 {
-
 	// bits/8*chanels*frame_size = size;
 	speex_audio_processor::speex_audio_processor( int sample_rate )
 		:m_sample_rate( sample_rate )
 	{
-		m_stateDecode = speex_decoder_init(&speex_nb_mode); 
-		m_stateEncode = speex_encoder_init(&speex_nb_mode);
+		const SpeexMode *mode = NULL;
+		switch( sample_rate )
+		{
+		case 8000:
+			mode = &speex_nb_mode;
+			break;
+		case 16000:
+			mode = &speex_wb_mode;
+			break;
+		case 24000:
+			mode = &speex_uwb_mode;
+			break;
+		}
+		
+		m_stateDecode = speex_decoder_init(mode); 
+		m_stateEncode = speex_encoder_init(mode);
     	speex_bits_init(&m_bitsDecode);  
     	speex_bits_init(&m_bitsEncode); 
 
@@ -33,6 +46,7 @@ namespace audio
 		speex_bits_destroy(&m_bitsEncode);
       	speex_decoder_destroy(m_stateDecode);
       	speex_decoder_destroy(m_stateEncode);
+		speex_preprocess_state_destroy(m_st);
 	}
 
 	void speex_audio_processor::preprocess_init()
@@ -64,7 +78,7 @@ namespace audio
 		speex_preprocess_ctl(m_st, SPEEX_PREPROCESS_SET_PROB_CONTINUE, &vadProbContinue); //Set probability required for the VAD to stay in the voice state (integer percent)   
 	}
 
-	int speex_audio_processor::encode()
+	int speex_audio_processor::encode( const std::string& out_type )
 	{
 		//把16bits的值转化为float,以便speex库可以在上面工作  
         spx_int16_t * ptr=(spx_int16_t *)m_decode_buf;  
@@ -87,21 +101,26 @@ namespace audio
             }
         }  
 
-        //memcpy( m_buf+m_buf_size, m_decode_buf, m_frame_size*sizeof(short) );
-        //m_buf_size += m_frame_size*sizeof(short);
+        if ( out_type == "speex" )
+        {
+	        float input[m_frame_size];
+		    for (int i=0;i<m_frame_size;i++)  
+		    {
+		        input[i]=m_decode_buf[i]; 
+		    }
 
-	    float input[m_frame_size];
-	    for (int i=0;i<m_frame_size;i++)  
+		    speex_bits_reset(&m_bitsEncode);  
+		    //对帧进行编码  
+		    speex_encode(m_stateEncode, input, &m_bitsEncode);  
+		    //把bits拷贝到一个利用写出的char型数组  
+		    int size = speex_bits_write(&m_bitsEncode, m_buf+m_buf_size, BUF_SIZE-m_buf_size);  
+		    m_buf_size += size;	
+        }
+	    else
 	    {
-	        input[i]=m_decode_buf[i]; 
+			memcpy( m_buf+m_buf_size, m_decode_buf, m_frame_size*sizeof(short) );
+        	m_buf_size += m_frame_size*sizeof(short);
 	    }
-
-	    speex_bits_reset(&m_bitsEncode);  
-	    //对帧进行编码  
-	    speex_encode(m_stateEncode, input, &m_bitsEncode);  
-	    //把bits拷贝到一个利用写出的char型数组  
-	    int size = speex_bits_write(&m_bitsEncode, m_buf+m_buf_size, BUF_SIZE-m_buf_size);  
-	    m_buf_size += size;
 
         int ret = SUCCESS;
         if ( m_serial_silence >= MAX_SERIAL_SILENCE )
