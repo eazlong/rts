@@ -1,9 +1,9 @@
 #pragma once
-
 #include <string>
 #include <map>
 #include <queue>
 using namespace std;
+#include "command.h"
 
 namespace server
 {
@@ -32,14 +32,6 @@ namespace server
 		unsigned int m_buf_length;
 	};
 
-	typedef struct start_command_
-	{
-		std::string anchor_id;
-		std::string language_in;
-		std::string language_out;
-		unsigned long start_time;
-	}start_command;
-
 	typedef struct 
 	{
 		std::string streaming_start;
@@ -52,6 +44,7 @@ namespace server
 	{
 	  unsigned long start_time;
 	  unsigned long end_time;
+	  unsigned int* seq_num;
 	  std::string anchor_id;
 	  std::string language_in;
 	  std::string language_out;
@@ -69,8 +62,10 @@ namespace server
 
 		void add_buf( const char* buf, int size, int command_length );
 		bool uncompleted( int& length );
-		bool decode_request( std::map<std::string, start_command>& stream_info, std::string& anchor_id );
-		static std::string encode_result( result& res );
+		request* decode_request();
+		std::string encode_result( int code, const std::string& description, std::map<std::string, std::string>* other_params=NULL );
+		static std::string encode_translate_result( const result& res );
+
 	private:
 		std::queue<control_data_buf*> m_data_queue;
 	};

@@ -29,7 +29,7 @@ namespace server
 	
 	void control_data_buf::set_cur_cmd_length( unsigned int length )
 	{
-		m_cur_cmd_length = length;	
+		m_cur_cmd_length = length;
 	}
 
 	int control_data_buf::add_buf( const char* buf, int size )
@@ -95,56 +95,103 @@ namespace server
 		return !buf->completed();
 	}
 
-	bool control_data_processor::decode_request( std::map<std::string, start_command>& stream_info, std::string& anchor_id )
+	request* control_data_processor::decode_request()
 	{
-		bool reslt = false;
-		while ( !m_data_queue.empty() )
+		control_data_buf* buf = m_data_queue.front();
+		if ( !buf->completed() )
 		{
-			control_data_buf* buf = m_data_queue.front();
-			if ( !buf->completed() )
-			{
-				break;
-			}
+			return NULL;
+		}
 
-			char* data = buf->get_buf();
-
-			XMLDocument doc;
-			XMLError error = doc.Parse( data );
-			if ( error != XML_SUCCESS )
-			{
-				printf ( "parse buf:%s error : %d\n", data, error );
-				reslt = false;
-				break;
-			}
-
-			XMLElement* root= doc.RootElement();
-			const char* command = root->FirstChildElement("command")->GetText();
-			if ( strcmp( command, "start" ) == 0  )
-			{
-				start_command cmd;
-				cmd.anchor_id = root->FirstChildElement("anchor_id")->GetText();
-				cmd.language_in = root->FirstChildElement("language_in")->GetText();
-				cmd.language_out = root->FirstChildElement("language_out")->GetText();
-				const char* data = root->FirstChildElement("start_time")->GetText();
-				struct tm tm_time;  
-        		strptime( data, "%H:%M:%S", &tm_time );  
-        		cmd.start_time = mktime(&tm_time);
-
-        		anchor_id = cmd.anchor_id;
-        		
-        		printf ( "start time %s : %lu\n", data, cmd.start_time );
-
-        		stream_info.insert( std::make_pair(cmd.anchor_id, cmd) );
-        		reslt = true;
-			}
-
+		char* data = buf->get_buf();
+		XMLDocument doc;
+		XMLError error = doc.Parse( data );
+		if ( error != XML_SUCCESS )
+		{
+			printf ( "parse buf:%s error : %d\n", data, error );
 			m_data_queue.pop();
 			delete buf;
+			return NULL;
 		}
-		return reslt;
+
+		XMLElement* root= doc.RootElement();
+		const char* command = root->FirstChildElement("command")->GetText();
+		request *request = NULL;
+		if ( strcmp( command, "start" ) == 0  )
+		{
+			std::string anchor_id = root->FirstChildElement("anchor_id")->GetText();
+			std::string language_in = root->FirstChildElement("language_in")->GetText();
+			std::string language_out = root->FirstChildElement("language_out")->GetText();
+			const char* data = root->FirstChildElement("start_time")->GetText();
+			long start_time = 0;
+			if ( data != 0 )
+			{
+				struct tm tm_time;  
+				strptime( data, "%H:%M:%S", &tm_time );  
+				start_time = mktime( &tm_time );
+			}
+			
+			request = new single_start( anchor_id, language_in, language_out, start_time );
+		} 
+		else if ( strcmp( command, "create room" ) == 0 )
+		{
+			const char* ids = root->FirstChildElement( "id" )->GetText();
+			std::string id = ids==0?"":ids;
+			const char* l = root->FirstChildElement( "language" )->GetText(); 
+			std::string language = l==0?"":l;
+			request = new create_room( id, language );
+		}
+		else if ( strcmp( command, "join room" ) == 0 )
+		{
+			const char* ids = root->FirstChildElement( "id" )->GetText();
+			std::string id = ids==0?"":ids;
+			const char* room = root->FirstChildElement( "room_id" )->GetText();
+			std::string room_id = room==0?"":room;
+			const char* l = root->FirstChildElement( "language" )->GetText(); 
+			std::string language = l==0?"":l;
+
+			request = new join_room( id, language, room_id );
+		}
+
+		m_data_queue.pop();
+		delete buf;
+
+		return request;
 	}
 
-	std::string control_data_processor::encode_result( result& res )
+	std::string control_data_processor::encode_result( int code, const std::string& description, std::map<std::string, std::string>* other_params )
+	{
+		XMLDocument doc;
+		XMLElement* parent = doc.NewElement( "root" );
+		doc.InsertFirstChild( parent );
+
+		XMLElement* c = doc.NewElement("code");
+		char buf[8];
+		sprintf( buf, "%d", code );
+		c->SetText( buf );
+
+		XMLElement* desc = doc.NewElement("description");
+		desc->SetText( description.c_str() );
+		parent->InsertFirstChild( c );
+		parent->InsertFirstChild( desc );
+
+		if ( other_params != NULL )
+		{
+			for (std::map<std::string, std::string>::iterator it=other_params->begin();
+				it != other_params->end(); it++ )
+			{
+				XMLElement* e = doc.NewElement(it->first.c_str());
+				e->SetText( it->second.c_str() );
+				parent->InsertFirstChild( e );
+			}
+		}
+
+		XMLPrinter printer;
+    	doc.Print( &printer );
+		return printer.CStr();
+	}
+
+	std::string control_data_processor::encode_translate_result( const result& res )
 	{
 		XMLDocument doc;
 		XMLElement* parent = doc.NewElement( "root" );
@@ -152,12 +199,14 @@ namespace server
 
 		XMLElement* cmd = doc.NewElement("command");
 		cmd->SetText( "result" );
+		XMLElement* seq_num = doc.NewElement("seq_num");
+		seq_num->SetText( *(res.seq_num) );
 		XMLElement* anchor_id = doc.NewElement("anchor_id");
 		anchor_id->SetText( res.anchor_id.c_str() );
-		XMLElement* asr = doc.NewElement("asr");
+		XMLElement* asr = doc.NewElement( "asr" );
 		asr->SetText( res.asr_result.c_str() );
 		XMLElement* translate = doc.NewElement("translate");
-		for ( std::map<std::string, std::string>::iterator it=res.trans_result.begin();
+		for ( std::map<std::string, std::string>::const_iterator it=res.trans_result.begin();
 			it != res.trans_result.end(); it++ )
 		{
 			XMLElement* element = doc.NewElement(it->first.c_str());
@@ -173,7 +222,9 @@ namespace server
 		strftime(time_buf, sizeof(time_buf), "%H:%M:%S", localtime((time_t*)&res.end_time));  
 		end_time->SetText( time_buf );
 
+
 		parent->InsertFirstChild(cmd);
+		parent->InsertFirstChild(seq_num);
 		parent->InsertFirstChild(anchor_id);
 		parent->InsertFirstChild(asr);
 		parent->InsertFirstChild(translate);

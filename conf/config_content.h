@@ -34,7 +34,13 @@ public:
 	server audio_svr;
 	server control_svr;
 
-	int log_level;
+	typedef struct log_
+	{
+		int log_level;	
+		int stdout;
+		std::string file;
+	}log;
+	log l;
 
 	typedef struct translate_account_
 	{

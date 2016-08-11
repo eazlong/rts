@@ -19,7 +19,7 @@ namespace http
 		asr_client( http_client* client );
 		virtual ~asr_client();
 
-		virtual int asr( const std::string& file, std::string& out,const std::string& language_in="cmn-CHN" ) = 0;
+		virtual int asr( const std::string& file, std::string& out,const std::string& language_in="cmn-CHN", bool oauth = false ) = 0;
 	protected:
 		http_client* m_http_client;
 	};

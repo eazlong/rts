@@ -9,7 +9,6 @@ namespace http
 		const std::string& accept_format, http_client* client )
 		:asr_client( client ), m_appid( appid ), m_appkey( appkey ), m_id( id ), m_accept_type( accept_format ), m_last_oauthtime(0)
 	{
-		memset( m_token, 0, sizeof(m_token) );
 	}
 
 	asr_client_baidu::~asr_client_baidu()
@@ -20,13 +19,15 @@ namespace http
 	size_t asr_client_baidu::oauth_write_callback(void *ptr, size_t size, size_t nmemb, void *userp)
 	{
 		char* buf = (char*)ptr;
-		printf("*********************%s\n", buf );	
+		//printf("*********************%s\n", buf );	
 		char* start = strstr( buf, "\"access_token\":\"" ) + strlen( "\"access_token\":\"" );
 		char* end = strchr( start, '"' );
-		char* str = (char*)userp;
-		printf("*********************%s, %d\n", (char*)str, end-start);	
-		strncpy( str, start, end-start );
-		printf("*********************%s\n", (char*)str );	
+		if ( start != NULL && end != NULL )
+		{
+			std::string* result = (std::string*)userp;
+			(*result).assign( start, end-start );	
+		}
+		
 		return size*nmemb;
 	}
 
@@ -39,28 +40,14 @@ namespace http
 		string_map headers;
 
 		if ( SUCCESS != m_http_client->post( "https://openapi.baidu.com/oauth/2.0/token", 
-			url_params, headers, oauth_write_callback, m_token, NULL, NULL, (char*)param.c_str(), param.length() ) )
+			url_params, headers, oauth_write_callback, &m_token, NULL, NULL, (char*)param.c_str(), param.length() ) )
 		{
 			printf("oauth for baidu failed\n" );
 			return FAILED;
 		}
-		printf("*********************%s\n", m_token );
+		//printf("*********************%s\n", m_token );
 
 		return SUCCESS;
-	}
-
-	size_t asr_client_baidu::read_callback(void *ptr, size_t size, size_t nmemb, void *userp)
-	{
-		if ( userp == NULL )
-			return 0;
-
-		FILE* fp = (FILE*)userp;
-		fseek( fp, 0L, SEEK_END );
-  		int len =ftell( fp )+1;
-  		// char* buf = new char[len];
-		int rd = fread( ptr, 1, len, fp );
-		//fprintf(stdout, "size: %d %d\n", rd, nmemb );
-		return rd;
 	}
 
 	size_t asr_client_baidu::write_callback(void *ptr, size_t size, size_t nmemb, void *userp)
@@ -69,30 +56,25 @@ namespace http
 
 		char* buf = (char*)ptr;
 		//printf("*********************%s\n", buf );	
-		char* start = strstr( buf, "\"result\":[\"" ) 
+		char* start = strstr( buf, "\"result\":[\"" );
 		if ( start != NULL )
 		{
 			start += strlen( "\"result\":[\"" );
 			char* end = strchr( start, '"' );
-			char* str = (char*)userp;
 			std::string* result = (std::string*)userp;
-			*result = std::string(start, end );
+			(*result).assign(start, end-start );
 		}
 
 		return nmemb*size;
 	}
 
-	int asr_client_baidu::asr( const std::string& file, std::string& out, const std::string& language_in )
+	int asr_client_baidu::asr( const std::string& file, std::string& out, const std::string& language_in, bool need_oauth )
 	{
-		time_t now;
-		time(&now);
-		if ( now - m_last_oauthtime >= 3600*24*28 )
+		//strcpy(m_token, "24.f891968ac2fc31bbc115977904079058.2592000.1471780301.282335-8402549");
+		if ( need_oauth )
 		{
-			//oauth();
-			m_last_oauthtime = now;
+			oauth();
 		}
-
-		strcpy(m_token, "24.f891968ac2fc31bbc115977904079058.2592000.1471780301.282335-8402549");
 
 		FILE *fp = fopen( file.c_str(), "rb" );
 		if ( fp == NULL )

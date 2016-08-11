@@ -1,6 +1,7 @@
 #include "config.h"
 #include "config_content.h"
 #include "../xml/tinyxml2.h"
+#include <stdio.h>
 using namespace tinyxml2;
 
 config::config( const std::string& file )
@@ -65,7 +66,9 @@ int config::initialize()
 	config_content::get_instance()->control_svr.device = server->FirstChildElement("device")->GetText();
 
 	XMLElement* log = root->FirstChildElement("log");
-	config_content::get_instance()->log_level = log->IntAttribute("level");
+	config_content::get_instance()->l.log_level = log->IntAttribute("level");
+	config_content::get_instance()->l.file = log->Attribute("file");
+	config_content::get_instance()->l.stdout = log->IntAttribute("stdout");
 
 	XMLElement* translate = root->FirstChildElement("translate");
 	XMLElement* ta = translate->FirstChildElement( "account" );
@@ -76,7 +79,7 @@ int config::initialize()
 		trans_acc.client_id = ta->Attribute("client_id");
 		trans_acc.client_secret = ta->Attribute("client_secret");
 		config_content::get_instance()->taccounts.push_back( trans_acc );		
-		ta = translate->NextSiblingElement( "account" );
+		ta = ta->NextSiblingElement( "account" );
 	}
 	
 
@@ -92,7 +95,7 @@ int config::initialize()
 		asr_acc.accept_format = aa->Attribute("accept_format");
 		asr_acc.auth_interval = (long)aa->IntAttribute("auth_interval");
 		config_content::get_instance()->aaccounts.push_back( asr_acc );
-		aa = asr->NextSiblingElement( "account" );		
+		aa = aa->NextSiblingElement( "account" );	
 	}
 
 	return SUCCESS;

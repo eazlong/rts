@@ -13,7 +13,7 @@ namespace http
 		asr_client_manager( bool need_lock = true );
 		virtual ~asr_client_manager();
 
-		asr_client* get_client( const std::string& type );
+		asr_client* get_client( const std::string& type, bool &need_oauth );
 		void set_client( const std::string& type, asr_client* c );
 
 		void set_asr_account( const std::string& type, const std::string& id, const std::string& appid,

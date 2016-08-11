@@ -40,13 +40,13 @@ namespace http
 			}
 
 			std::string* result = (std::string*)userp;
-			*result = std::string(buf);
+			(*result).assign(buf);
 		}
 		
 		return nmemb*size;
 	}
 
-	int asr_client_nuance::asr( const std::string& file, std::string& out, const std::string& language_in )
+	int asr_client_nuance::asr( const std::string& file, std::string& out, const std::string& language_in, bool need_oauth )
 	{
 		FILE *fp = fopen( file.c_str(), "rb" );
 		if ( fp == NULL )

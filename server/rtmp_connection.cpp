@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include <sstream>
+#include <iostream>
+using namespace std;
+
 namespace server
 {
   static const AVal av_dquote = AVC("\"");
@@ -245,6 +249,7 @@ namespace server
       m_ssl_context = NULL;
     }
   }
+
 
   int rtmp_connection::prepare()
   {
@@ -496,6 +501,7 @@ namespace server
        RTMP_LogHex(RTMP_LOGDEBUG, (uint8_t*)packet->m_body, packet->m_nBodySize);
       #endif
     }
+    RTMPPacket_Free( packet );
     return ret;
   }
 

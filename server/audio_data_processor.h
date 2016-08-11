@@ -7,6 +7,9 @@ using namespace audio;
 
 namespace server
 {
+	/*
+		process audio data package.
+	*/
 	class audio_data_processor: public rtmp_data_processor
 	{
 	public:
@@ -19,16 +22,20 @@ namespace server
 		virtual int process_video( const char* buf, int size );
 		virtual int get_audio_status( std::string& file );
 		virtual int get_video_status() const;
+
+		enum out_type
+		{
+			PCM,
+			SPEEX,
+			NOT_SET
+		};
+		virtual void set_out_type( out_type t );
+		virtual out_type get_out_type() const;
+
 	protected:
 		void write_wav_head( int length );
 		std::string get_out_file_suffix();
 	private:
-		enum out_type
-		{
-			PCM,
-			SPEEX
-		};
-
 		audio::audio_processor* m_audio_processor;
 		audio::ogg_encode* m_ogg_encoder;
 		int m_audio_status;

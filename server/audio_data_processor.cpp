@@ -1,13 +1,13 @@
 #include "audio_data_processor.h"
 #include <string.h>
+#include <sys/time.h>
 
 namespace server
 {
 	audio_data_processor::audio_data_processor( audio_processor* process, ogg_encode* encoder )
-		:m_audio_processor( process ), m_ogg_encoder( encoder ), m_audio_status(0), m_video_status(0)
+		:m_audio_processor( process ), m_ogg_encoder( encoder ), m_audio_status(0), m_video_status(0), m_out_type( NOT_SET )
 	{
 		m_file = NULL;
-		m_out_type = (m_ogg_encoder==NULL)?PCM:SPEEX;
 	}
 
 	audio_data_processor::~audio_data_processor()
@@ -65,6 +65,16 @@ namespace server
 		fwrite( &head, 1, sizeof(head), m_file );
 	}
 
+	void audio_data_processor::set_out_type( out_type t ) 
+	{
+		m_out_type = t;
+	}
+
+	audio_data_processor::out_type audio_data_processor::get_out_type() const
+	{
+		return m_out_type;
+	}
+
 	std::string audio_data_processor::get_out_file_suffix()
 	{
 		std::string type = "pcm";
@@ -85,7 +95,10 @@ namespace server
   		{ 
   			char file_name[128] = {0};
   			std::string suffix = get_out_file_suffix();
-    		sprintf( file_name, "temp_file%lu_%ld.%s", pthread_self(), time(NULL), suffix.c_str() );
+  			struct timeval tv;
+  			struct timezone tz;
+  			gettimeofday( &tv, &tz );
+    		sprintf( file_name, "temp_file%lu_%ld_%ld.%s", pthread_self(), tv.tv_sec, tv.tv_usec, suffix.c_str() );
     		m_file = fopen( file_name, "wb" );
     		m_file_name.assign( file_name );
     		m_file_size = 0;
@@ -97,10 +110,10 @@ namespace server
 	    		m_audio_processor->get_processor_info( info, &size );
 	    		m_ogg_encoder->write_head( (unsigned char*)info, size );	
     		}
-    		else
-    		{
-    			fseek( m_file, 44, SEEK_SET );
-    		}
+    		// else
+    		// {
+    		// 	//fseek( m_file, 44, SEEK_SET );
+    		// }
   		}
 
 		int ret = m_audio_processor->process( buf, size, m_out_type==SPEEX?"speex":"pcm" );
@@ -137,10 +150,10 @@ namespace server
 			{
 				m_ogg_encoder->destory();
 			}
-			else
-			{
-				write_wav_head( m_file_size );
-			}
+			// else
+			// {
+			// 	//write_wav_head( m_file_size );
+			// }
 				
 			fclose( m_file );
 			m_file=NULL;

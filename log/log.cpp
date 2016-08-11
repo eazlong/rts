@@ -11,7 +11,7 @@
 
 namespace b_log
 {
-	#define MAX_PRINT_LEN	2048
+	#define MAX_PRINT_LEN	1024
 
 	log::log( const std::string& log_file, log_level level )
 		:m_log_level( level )

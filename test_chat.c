@@ -94,6 +94,7 @@
       return 1;
     }
 
+char g_id[16];
     //Publish using RTMP_SendPacket()  
 int publish_using_packet( char* file_name )
 {  
@@ -112,15 +113,6 @@ int publish_using_packet( char* file_name )
   uint32_t datalength=0;             
   uint32_t timestamp=0;             
   uint32_t streamid=0;                          
-
-  // FILE*fp=NULL;  
-  // fp=fopen(file_name,"rb");  
-  // if (!fp)
-  // {  
-  //   RTMP_LogPrintf("Open File Error.\n");  
-  //   CleanupSockets();  
-  //   return -1;  
-  // }  
 
  
 
@@ -147,8 +139,8 @@ int publish_using_packet( char* file_name )
   char url[1024];    
   
   //sprintf( url, "%s", "rtmp://103.255.177.77:1935 conn=O:1 conn=NS:anchorid:99999999 conn=O:0" );                  
-  //sprintf( url, "%s", "rtmp://0.0.0.0:1935 conn=O:1 conn=NS:anchorid:99999999 conn=O:0" );                  
-  sprintf( url, "%s", "rtmp://120.24.44.224:1935 conn=O:1 conn=NS:anchorid:99999999 conn=O:0" );  
+  //sprintf( url, "%s%s%s", "rtmp://120.24.44.224:1935 conn=O:1 conn=NS:anchorid:", g_id, " conn=O:0" );                  
+  sprintf( url, "%s%s%s", "rtmp://0.0.0.0:1935 conn=O:1 conn=NS:anchorid:", g_id, " conn=O:0" );                  
   if( !RTMP_SetupURL( rtmp, url ) )  
   {  
     RTMP_Log(RTMP_LOGERROR,"SetupURL Err\n");  
@@ -187,9 +179,7 @@ int publish_using_packet( char* file_name )
 
   RTMP_LogPrintf("Start to send data ...\n");  
 
-  //jump over WAV header
-  //fseek(fp,44,SEEK_SET);     
-
+  //jump over WAV he
   short in[FRAME_SIZE];  
   short out[FRAME_SIZE];    
   float input[FRAME_SIZE];  
@@ -343,18 +333,11 @@ return 0;
 void* routine( void* param )
 {
   sleep( 1 );
-  publish_using_packet( (char*)param );
+  publish_using_packet( 0);
 }
 
 int main(int argc, char* argv[])
 {  
-  //2 Methods:  
-  char* file;
-  if ( argc >= 2 )
-    file = argv[1];
-  else
-    file = "test.wav";
-
  RTMP_LogLevel loglvl=RTMP_LOGERROR;  
   RTMP_LogSetLevel(loglvl); 
 
@@ -365,9 +348,8 @@ int main(int argc, char* argv[])
   struct sockaddr_in addr; 
   addr.sin_family = AF_INET;  
   addr.sin_port = htons(1936);  
-  //addr.sin_addr.s_addr = inet_addr("127.0.0.1"); 
-  addr.sin_addr.s_addr = inet_addr("120.24.44.224"); 
-
+  //addr.sin_addr.s_addr = inet_addr("120.24.44.224"); 
+  addr.sin_addr.s_addr = inet_addr("0.0.0.0");
   ////addr.sin_addr.s_addr = inet_addr("103.255.177.77");
   //创建套接字  
   int fd = socket(AF_INET, SOCK_STREAM, 0);  
@@ -382,23 +364,43 @@ int main(int argc, char* argv[])
       return 0;  
   }
 
-  char* str = "<root>\n  <command>start</command>\n  <anchor_id>99999999</anchor_id>\n   <language_in>zh-CHS</language_in>\n  <language_out>en</language_out>\n  <start_time>00:00:00</start_time>\n</root>";
-
+  strcpy( g_id, argv[2] );
+  char str[128] = {0};
+  if ( strcmp(argv[1], "c") == 0 )
+  {
+    strcpy( str, "<root>\n  <command>create room</command>\n  <id>");
+    strcat( str, g_id );
+    strcat( str, "</id>\n   <language>" );
+    strcat( str, argv[3] );
+    strcat( str, "</language>\n</root>" );
+  }
+  else
+  {
+    strcpy( str, "<root>\n  <command>join room</command>\n  <id>");
+    strcat( str, g_id );
+    strcat( str, "</id>\n   <language>" );
+    strcat( str, argv[3] );
+    strcat( str, "</language>\n    <room_id>");
+    strcat( str, argv[1] );
+    strcat( str, "</room_id>\n</root>" );  
+  }
+  
+  
   char buff[1024];
   sprintf( buff, "&00%s", str );
   (*((short*)(buff+1))) = (short)(strlen(str)+3);
+  printf( "%d", (strlen(str)+3) );
   send( fd, buff, strlen(str)+3, 0 );
-  printf ( "send %s\n", buff );
 
 
   pthread_t id = 0;
   pthread_attr_t attributes;
   int ret;
--
+
   pthread_attr_init(&attributes);
   pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_DETACHED);
 
-  ret = pthread_create(&id, &attributes, routine, file);
+  ret = pthread_create(&id, &attributes, routine, 0);
   if (ret != 0)
     sprintf("%s, pthread_create failed with %d\n", __FUNCTION__, ret);
 
@@ -407,7 +409,34 @@ int main(int argc, char* argv[])
       //接收数据 
       memset( buff, 0, sizeof(buff) );
       recv( fd, buff, sizeof(buff), 0);  
-      printf("%s\n", buff);  
+     // printf("%s\n", buff);  
+
+      char output[256] = {0};
+      char* start = strstr( buff, "<anchor_id>" );
+      if ( start == 0 )
+      {
+        printf("%s\n", buff);  
+
+        continue;
+      }
+      start += strlen("<anchor_id>");
+      char* end = strstr( start, "</anchor_id>" );
+      strncpy( output, start, end-start );
+      strcat( output, " say:" );
+      char l[16];
+      strcpy( l, "<");
+      strcat( l, argv[3] );
+      strcat( l, ">" );
+
+      start = strstr( buff, l );
+      start += strlen( l );
+      strcpy( l, "</");
+      strcat( l, argv[3] );
+      strcat( l, ">" );
+      end = strstr( start, l);
+      strncat( output, start, end-start );
+
+      printf("%s\n", output );
       sleep( 1 );
   }  
 

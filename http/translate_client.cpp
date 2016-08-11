@@ -30,7 +30,7 @@ namespace http
 		char* start = strstr( buf, "\"access_token\":\"" ) + strlen( "\"access_token\":\"" );
 		char* end = strchr( start, '"' );
 		std::string* str = (std::string*)userp;
-		(*str) = std::string(start, end-start);
+		(*str).assign(start, end-start);
 
 		//printf( "token:%s\n", (*str).c_str() );
 	
@@ -47,7 +47,7 @@ namespace http
 			start += strlen( "Serialization/\">" );
 			char* end = strchr( start, '<' );
 			std::string* str = (std::string*)userp;	
-			(*str) = std::string(start, end-start);
+			(*str).assign(start, end-start);
 		} 
 
 		return size*nmemb;
