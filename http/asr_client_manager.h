@@ -38,5 +38,7 @@ namespace http
 
 		bool m_need_lock;
 		pthread_mutex_t m_mutex;
+
+		bool m_created_iflytec;
 	};
 }

@@ -25,7 +25,7 @@
      (x<<8&0xff0000)|(x<<24&0xff000000))  
     #define HTONTIME(x) ((x>>16&0xff)|(x<<16&0xff0000)|(x&0xff00)|(x&0xff000000))  
     
-    #define FRAME_SIZE 320
+    #define FRAME_SIZE 160
 
     /*read 1 byte*/  
     int ReadU8(uint32_t *u8,FILE*fp){  
@@ -231,17 +231,17 @@ int publish_using_packet( char* file_name )
   start_time=RTMP_GetTime();  
   int packet_number = 0;
 
-  //FILE* fspx = fopen( "test_file_org.spx", "wb" );
+  FILE* fwav = fopen( "test.wav", "rb" );
 
 
   /* id：读取音频文件描述符；fd：写入的文件描述符。i，j为临时变量*/
   int id;
 
   /* 打开声卡设备，失败则退出*/
-  if ( ( id = open ( "/dev/dsp", O_RDWR ) ) < 0 ) {
-    fprintf (stderr, " Can't open sound device!\n");
-    exit ( -1 ) ;
-  }
+   if ( ( id = open ( "/dev/dsp", O_RDWR ) ) < 0 ) {
+     fprintf (stderr, " Can't open sound device!\n");
+     exit ( -1 ) ;
+   }
 
 /* 设置适当的参数，使得声音设备工作正常*/
 /* 详细情况请参考Linux关于声卡编程的文档*/
@@ -281,7 +281,8 @@ int publish_using_packet( char* file_name )
     //memset(out,0,FRAME_SIZE*sizeof(short));  
     //读入一帧16bits的声音  
     j++; 
-    int r=read( id, in, FRAME_SIZE );  
+    //int r=read( id, in, FRAME_SIZE );  
+    int r = fread( in, 1, FRAME_SIZE, fwav );
 
     if (r<FRAME_SIZE)  
       break;  
@@ -324,6 +325,7 @@ int publish_using_packet( char* file_name )
 
 RTMP_LogPrintf("\nSend Data Over\n");  
 close( id );
+fclose( fwav );
 
 if (rtmp!=NULL){  
   RTMP_Close(rtmp);          
@@ -367,8 +369,8 @@ int main(int argc, char* argv[])
   addr.sin_port = htons(1936);  
   //addr.sin_addr.s_addr = inet_addr("127.0.0.1"); 
   addr.sin_addr.s_addr = inet_addr("120.24.44.224"); 
+  //addr.sin_addr.s_addr = inet_addr("103.255.177.77");
 
-  ////addr.sin_addr.s_addr = inet_addr("103.255.177.77");
   //创建套接字  
   int fd = socket(AF_INET, SOCK_STREAM, 0);  
   if(-1 == fd){ 
@@ -382,7 +384,7 @@ int main(int argc, char* argv[])
       return 0;  
   }
 
-  char* str = "<root>\n  <command>start</command>\n  <anchor_id>99999999</anchor_id>\n   <language_in>zh-CHS</language_in>\n  <language_out>en</language_out>\n  <start_time>00:00:00</start_time>\n</root>";
+  char* str = "<root>\n  <command>start</command>\n  <anchor_id>99999999</anchor_id>\n   <language_in>en</language_in>\n  <language_out>am</language_out>\n  <start_time>00:00:00</start_time>\n</root>";
 
   char buff[1024];
   sprintf( buff, "&00%s", str );

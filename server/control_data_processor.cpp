@@ -116,6 +116,8 @@ namespace server
 
 		XMLElement* root= doc.RootElement();
 		const char* command = root->FirstChildElement("command")->GetText();
+		printf("recieve command:%s\n", data);
+		
 		request *request = NULL;
 		if ( strcmp( command, "start" ) == 0  )
 		{
@@ -151,6 +153,26 @@ namespace server
 			std::string language = l==0?"":l;
 
 			request = new join_room( id, language, room_id );
+		}
+		else if ( strcmp( command, "change language" ) == 0 )
+		{
+			const char* ids = root->FirstChildElement( "anchor_id" )->GetText();
+			std::string id = ids==0?"":ids;
+			//const char* room = root->FirstChildElement( "room_id" )->GetText();
+			//std::string room_id = room==0?"":room;
+			const char* l = root->FirstChildElement( "language_in" )->GetText(); 
+			std::string language = l==0?"":l;
+			const char* lo = root->FirstChildElement( "language_out" )->GetText(); 
+			std::string language_out = lo==0?"":lo;
+
+			request = new change_language( id, "", language, language_out );
+		}
+		else if ( strcmp( command, "get room list" ) == 0 )
+		{
+			const char* ids = root->FirstChildElement( "id" )->GetText();
+			std::string id = ids==0?"":ids;
+
+			request = new get_room_list( id );
 		}
 
 		m_data_queue.pop();

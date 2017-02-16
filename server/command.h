@@ -93,6 +93,47 @@ namespace server
 		std::string m_room_id;
 	};
 
+	class get_room_list: public request
+	{
+	public:
+		get_room_list( const std::string& id )
+			:request( "get_room_list", id )
+		{
+		}
+		virtual ~get_room_list()
+		{
+		}
+	};
+	
+	class change_language: public request
+	{
+	public:
+		change_language( const std::string& id, const std::string& room_id, 
+			const std::string& language, const std::string& language_out)
+			:request( "change_language", id ), m_language( language ), 
+			m_language_out(language_out), m_room_id( room_id )
+		{
+		}
+		virtual ~change_language()
+		{
+		}
+		const std::string& get_language() const
+		{
+			return m_language;
+		}
+		const std::string& get_room_id() const
+		{
+			return m_room_id;
+		}
+		const std::string& get_language_out() const
+		{
+			return m_language_out;
+		}
+	private:
+		std::string m_language;
+		std::string m_language_out;
+		std::string m_room_id;
+	};
 
 	class response
 	{

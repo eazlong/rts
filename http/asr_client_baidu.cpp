@@ -35,8 +35,11 @@ namespace http
 	{
 		std::string param = "grant_type=client_credentials";
 		param += "&client_id=" + m_appid + "&client_secret=" + m_appkey;
-
+		// printf ( param.c_str() );
 		string_map url_params;
+		// url_params.insert( std::make_pair("grant_type", "client_credentials") );
+		// url_params.insert( std::make_pair("client_id", m_appid) );
+		// url_params.insert( std::make_pair("client_secret", m_appkey) );
 		string_map headers;
 
 		if ( SUCCESS != m_http_client->post( "https://openapi.baidu.com/oauth/2.0/token", 

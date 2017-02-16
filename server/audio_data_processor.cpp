@@ -39,7 +39,7 @@ namespace server
 		unsigned short channel;
 		unsigned int bitrate;
 		unsigned int data_per_second;
-		unsigned int data_adjust;
+		unsigned short data_adjust;
 		unsigned short bit_per_sample;
 		char data[4];
 		unsigned int audio_length;
@@ -52,6 +52,7 @@ namespace server
 		head.length = length;
 		memcpy( head.wav, "WAVE", 4);
 		strcpy( head.fmt_str, "fmt" );
+		head.fmt_str[3] = 0x20;
 		head.fmt_size=0x10;
 		head.fmt = 1;
 		head.channel = 1;
@@ -110,10 +111,10 @@ namespace server
 	    		m_audio_processor->get_processor_info( info, &size );
 	    		m_ogg_encoder->write_head( (unsigned char*)info, size );	
     		}
-    		// else
-    		// {
-    		// 	//fseek( m_file, 44, SEEK_SET );
-    		// }
+    		else //test: for iflytec
+    		{
+    			fseek( m_file, 44, SEEK_SET );
+    		}
   		}
 
 		int ret = m_audio_processor->process( buf, size, m_out_type==SPEEX?"speex":"pcm" );
@@ -150,10 +151,11 @@ namespace server
 			{
 				m_ogg_encoder->destory();
 			}
-			// else
-			// {
-			// 	//write_wav_head( m_file_size );
-			// }
+			else //test: for iflytec
+			{
+				//printf("******************************************\nwrite head:%d\n******************************************\n", m_file_size );
+				write_wav_head( m_file_size );
+			}
 				
 			fclose( m_file );
 			m_file=NULL;

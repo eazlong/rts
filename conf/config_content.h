@@ -36,7 +36,8 @@ public:
 
 	typedef struct log_
 	{
-		int log_level;	
+		int log_level;
+		int rtmp_log_level;
 		int stdout;
 		std::string file;
 	}log;

@@ -1,12 +1,14 @@
 #include "asr_client_manager.h"
 #include "asr_client_baidu.h"
 #include "asr_client_nuance.h"
+#include "asr_client_keda.h"
 #include "http_client.h"
+#include <unistd.h>
 
 namespace http
 {
 	asr_client_manager::asr_client_manager( bool need_lock )
-		:m_need_lock( need_lock )
+		:m_need_lock( need_lock ), m_created_iflytec( false )
 	{
 		m_need_lock?pthread_mutex_init( &m_mutex, NULL ):0;
 	}
@@ -25,6 +27,11 @@ namespace http
 		asr_account* acc = m_accounts[type].front();
 		m_accounts[type].pop();
 
+		// while ( m_clients[type].empty() && m_created_iflytec && type=="iflytec" )
+		// {
+		// 	usleep( 500 );
+		// }
+
 		if ( m_clients[type].empty() )
 		{
 			http_client *client = new http_client();
@@ -36,6 +43,11 @@ namespace http
 			{
 				c = new asr_client_nuance( acc->appid, acc->secret_key, acc->id, acc->accept_format, client );	
 			}
+			else if ( type == "iflytec" )
+			{
+				c = new asr_client_keda( "appid = 57909a43, work_dir = ." );
+			}
+
 			need_oauth = true;
 		}
 		else

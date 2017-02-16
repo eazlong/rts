@@ -32,7 +32,9 @@ using namespace audio;
 #include "asr_client_baidu.h"
 #include "asr_client_nuance.h"
 #include "translate_client.h"
+#include "translate_client_google.h"
 #include "asr_client_manager.h"
+#include "http_client.h"
 using namespace http;
 #include "room_manager.h"
 using namespace room;
@@ -100,7 +102,7 @@ std::string get_asr_type( const std::string& language_in )
   string type = "nuance";
   if ( language_in == "en" || language_in == "zh-CHS" )
   {
-    type = "baidu";
+    type = "iflytec";
   }
 
   return type;
@@ -137,13 +139,11 @@ void response_result( const result& r, const std::string& to_id )
     g_srv_info.svr_control->write( it->second, xml.c_str(), xml.size() );    
   }
   pthread_mutex_unlock(&g_srv_info.anchor_fd_lock);
-  printf( "end response:%s\n", get_time().c_str() );
 }
 
 void asr_process( void* param )
 {
   result* r = (result*)param;
-  printf( "start asr:%s %s\n", get_time().c_str(), r->file_name.c_str() );
   LOG( log::LOGDEBUG, "asr file %s, language %s\n", r->file_name.c_str(), r->language_in.c_str() );
   std::string type = get_asr_type( r->language_in );
   bool need_oauth = false;
@@ -163,8 +163,7 @@ void asr_process( void* param )
   a->asr( r->file_name, r->asr_result, l, need_oauth );
   g_srv_info.asr_manager.set_client( type, a );
   LOG( log::LOGINFO, "id:%s, language:%s, asr result: %s\n", r->anchor_id.c_str(), r->language_in.c_str(), r->asr_result.c_str() );
-  remove( r->file_name.c_str() );
-  printf( "end asr:%s %s\n", get_time().c_str(), r->file_name.c_str() );
+  //remove( r->file_name.c_str() );
   if ( r->asr_result.empty() )
   {
     delete r;
@@ -216,14 +215,23 @@ void asr_process( void* param )
 
 void translate_process( void* param )
 {
-  printf( "start translate:%s\n", get_time().c_str() );
   translate_in* t = (translate_in*)param;
   LOG( log::LOGINFO, "start translate:%s\n", t->res.asr_result.c_str() );
   std::string trans_result;
   if ( t->res.language_in != t->language_out )
   {
-    translate_client trans( "broadcast_trans", "11sN8ALEvHsoU7cxJVD%2f0pdvWe6mKn2YU96SUd%2f51Jc%3d" );
-    trans.translate( t->res.asr_result, t->res.language_in, trans_result, t->language_out );
+    if ( t->language_out == "am" ) //if the out language is amharic, use google translate
+    {
+      http_client http;
+      translate_client_google trans( &http, "AIzaSyDmN__Jo6IMiJ_-c2mHuVHliLiMNOK8lcg" );
+      trans.translate( t->res.asr_result, t->res.language_in, trans_result, t->language_out );  
+    }
+    else
+    {
+      translate_client trans( "broadcast_trans", "11sN8ALEvHsoU7cxJVD%2f0pdvWe6mKn2YU96SUd%2f51Jc%3d" );
+      trans.translate( t->res.asr_result, t->res.language_in, trans_result, t->language_out );
+    }
+    
   }
   else
   {
@@ -233,10 +241,8 @@ void translate_process( void* param )
   LOG( log::LOGINFO, "anchor:%s start:%ld end:%ld asr:%s translate:%s\n", 
       t->res.anchor_id.c_str(), t->res.start_time, t->res.end_time,
       t->res.asr_result.c_str(), trans_result.c_str() );
-  printf( "end translate:%s\n", get_time().c_str() );
 
   write_log_to_db( t, trans_result );
-  printf( "end write db:%s\n", get_time().c_str() );
 
   t->res.trans_result.insert( std::make_pair(t->language_out, trans_result) );
   std::string to_id = t->receive_id.empty()?t->res.anchor_id:t->receive_id;
@@ -253,7 +259,7 @@ void rtmp_process( void* param )
   speex_audio_processor* audio = new speex_audio_processor( sample_rate );
   ogg_encode* encoder = new ogg_encode();
   audio_data_processor* processor = new audio_data_processor( audio, encoder );
-  rtmp_connection* conn = new rtmp_connection( processor, g_srv_info.log_level );
+  rtmp_connection* conn = new rtmp_connection( processor, g_srv_info.rtmp_log_level );
   if ( rtmp_connection::FAILED == conn->handshake( info->client_fd ) )
   {
     LOG( log::LOGERROR, "handshake process error!\n" );
@@ -284,7 +290,6 @@ void rtmp_process( void* param )
       break;
     }
 
-    printf( "get a rtmp package:%s\n", get_time().c_str() );
     res = conn->process();
     if ( res == rtmp_connection::FAILED )
     {
@@ -292,8 +297,6 @@ void rtmp_process( void* param )
       g_srv_info.svr_audio->close( info->client_fd );
       break;
     }
-    printf( "process rtmp package finished:%s\n", get_time().c_str() );
-
     if ( processor->get_out_type() == audio_data_processor::NOT_SET )
     {
       std::string anchor_id = conn->get_id();
@@ -325,7 +328,7 @@ void rtmp_process( void* param )
       struct stat buf;
       if( 0 == stat( file.c_str(), &buf ) )
       {
-        if ( buf.st_size == 0 )
+        if ( buf.st_size < 320 ) //文件大小小于一个音频包，不做处理，删除掉
         {
           remove( file.c_str() );
           continue;
@@ -357,7 +360,6 @@ void rtmp_process( void* param )
       pthread_mutex_unlock( &g_customer_info_lock );
 
       g_srv_info.asr_thrds->do_message( r );
-      printf( "process rtmp package success:%s\n", get_time().c_str() );
     }
   }
 
@@ -406,6 +408,7 @@ pthread_mutex_t g_data_processor_lock;
 std::map<int, control_data_processor*> g_data_processor_map;
 void control_disconnect( int fd )
 {
+    LOG(log::LOGINFO, "close control fd %d !", fd );
     g_srv_info.svr_control->remove_client_fd( fd );
     g_srv_info.svr_control->close( fd );
   
@@ -423,17 +426,19 @@ void control_disconnect( int fd )
     for ( std::map<std::string, int>::iterator it=g_srv_info.anchor_fd.begin();
       it!=g_srv_info.anchor_fd.end(); it++ )
     {
+      LOG(log::LOGINFO, "exist fd %d !", it->second );
       if ( it->second == fd )
       {
         anchor_id = it->first;
         g_srv_info.anchor_fd.erase(it);
         room_manager::get_instance()->leave_room( anchor_id );
+        LOG(log::LOGINFO, "user %s leave rooms!", anchor_id.c_str() );
         break;
       }
     }
     pthread_mutex_unlock(&g_srv_info.anchor_fd_lock);
 
-    if ( anchor_id.empty() )
+    if ( !anchor_id.empty() )
     {
       pthread_mutex_lock(&g_customer_info_lock);
       g_customer_info.erase( anchor_id );
@@ -592,11 +597,49 @@ void* control_wait_data_thread( void* param )
           info.language = jr->get_language();
           info.language_out = "";
           info.start_time = 0;
-           LOG( log::LOGINFO, "get join room command form id:%s, speech language is %s, room id is %s \n",
+          LOG( log::LOGINFO, "get join room command form id:%s, speech language is %s, room id is %s \n",
             jr->get_id().c_str(), jr->get_language().c_str(), jr->get_room_id().c_str() );
 
           std::string result = processor->encode_result( 200, "success" ); 
           g_srv_info.svr_control->write( (*it), result.c_str(), result.size() );
+        }
+        else if ( r->get_type() == "get_room_list" )
+        {
+          LOG( log::LOGINFO, "get room list command form id:%s\n", r->get_id().c_str());
+
+          //get_room_list *grl = dynamic_cast<get_room_list*>( r );
+          std::map<std::string, room::room> rooms = room::room_manager::get_instance()->get_rooms();
+          std::map<std::string, std::string> params;
+          std::map<std::string, room::room>::iterator it_rooms = rooms.begin();
+          LOG( log::LOGINFO, "exist %lu rooms\n", rooms.size());
+          for( ; it_rooms!=rooms.end(); it_rooms++ )
+          {
+            params.insert(std::make_pair("id", it_rooms->first));
+            std::stringstream ss;
+            ss << it_rooms->second.get_persons().size();
+            params.insert(std::make_pair("persons", ss.str()));
+            params.insert(std::make_pair("create_time", it_rooms->second.get_create_time()));
+          }
+          std::string result = processor->encode_result( 200, "success", &params ); 
+          g_srv_info.svr_control->write( (*it), result.c_str(), result.size() );
+        }
+        else if ( r->get_type() == "change_language" )
+        {
+          change_language *cl = dynamic_cast<change_language*>( r );
+
+          info.language = cl->get_language();
+          info.language_out = cl->get_language_out();
+          info.start_time = 0;
+
+          LOG( log::LOGINFO, "%s change language to %s, out %s", cl->get_id().c_str(), 
+              info.language.c_str(), info.language_out.c_str() );
+
+          std::string result = processor->encode_result( 200, "success" ); 
+          g_srv_info.svr_control->write( (*it), result.c_str(), result.size() );
+        }
+        else
+        {
+          LOG( log::LOGERROR, "command not support:%s", r->get_type().c_str() );
         }
 
         pthread_mutex_lock( &g_customer_info_lock );
@@ -608,8 +651,6 @@ void* control_wait_data_thread( void* param )
         pthread_mutex_unlock( &g_srv_info.anchor_fd_lock );
         delete r;
       }
-        
-
     }
   }
 
@@ -653,10 +694,11 @@ int child_process()
   }
 
   g_srv_info.log_level = (log::log_level)config_content::get_instance()->l.log_level;
+  g_srv_info.rtmp_log_level = (log::log_level)config_content::get_instance()->l.rtmp_log_level;
 
   g_srv_info.svr_audio   = NULL;
   g_srv_info.audio_thrds = NULL;
-  if ( db::db::SUCCESS != g_srv_info.mysql.connect( "127.0.0.1", 0, "root", "3721", "rts" ) )
+  if ( db::db::SUCCESS != g_srv_info.mysql.connect( "127.0.0.1", 0, "root", "1234", "rts" ) )
   {
     printf("%s\n", "connect to db failed!" );
     return -1;
@@ -793,7 +835,7 @@ void process_exit( int code )
 
 int main(int argc, char **argv)
 {
- // return child_process();
+ //return child_process();
 
   signal(SIGINT,  SIG_IGN);// 终端中断  
   signal(SIGHUP,  SIG_IGN);// 连接挂断  

@@ -155,6 +155,7 @@ namespace http
         }  
         return strTemp;  
     }  
+    
 	std::string translate_client::get_translate_url( const std::string& in, const std::string& language_from, const std::string& language_to )
 	{
 		return TRANSLATE_URL+ "?text=" + UrlEncode(in) + "&from=" + language_from + "&to=" + language_to;

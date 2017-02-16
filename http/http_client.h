@@ -25,7 +25,11 @@ namespace http
 			const string_map& url_param, const string_map& headers, 
 			curl_callback* write_callback=NULL, void* write_param=NULL, 
 			curl_callback* read_callback=NULL, void* read_param=NULL,
-			char* data=NULL, int size=0 );
+			char* data=NULL, int size=0, bool encode=false, bool post_method=true );
+
+	protected:
+		unsigned char to_hex(unsigned char x);
+		std::string url_encode(const std::string& str);
 
 	private:
 		CURL* m_curl;

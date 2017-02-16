@@ -32,6 +32,7 @@ typedef struct
 
   b_log::log*  log_file;
   log::log_level log_level;
+  log::log_level rtmp_log_level;
 
   pthread_mutex_t anchor_fd_lock;
   std::map<std::string, int> anchor_fd;
