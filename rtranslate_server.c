@@ -102,7 +102,7 @@ std::string get_asr_type( const std::string& language_in )
   string type = "nuance";
   if ( language_in == "en" || language_in == "zh-CHS" )
   {
-    type = "iflytec";
+    type = "baidu";
   }
 
   return type;
@@ -153,17 +153,24 @@ void asr_process( void* param )
   {
     l = ALL_LANGUAGE[r->language_in];
   }
-  else
+  else if ( type== "baidu" )
   {
     if ( l=="zh-CHS" )
     {
       l = "zh";
     }
   }
+  else if ( type == "iflytec" )
+  {
+    if ( l=="zh-CHS" )
+    {
+      l = "zh_cn";
+    }
+  }
   a->asr( r->file_name, r->asr_result, l, need_oauth );
   g_srv_info.asr_manager.set_client( type, a );
   LOG( log::LOGINFO, "id:%s, language:%s, asr result: %s\n", r->anchor_id.c_str(), r->language_in.c_str(), r->asr_result.c_str() );
-  //remove( r->file_name.c_str() );
+  remove( r->file_name.c_str() );
   if ( r->asr_result.empty() )
   {
     delete r;

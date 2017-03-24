@@ -58,6 +58,7 @@ public:
 		std::string appid;
 		std::string secret_key;
 		std::string accept_format;
+		std::list<std::string> accept_languges;
 		long auth_interval;
 	}asr_account;
 	std::list<asr_account> aaccounts;
