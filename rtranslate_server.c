@@ -35,6 +35,7 @@ using namespace audio;
 #include "translate_client_google.h"
 #include "asr_client_manager.h"
 #include "http_client.h"
+#include "correction.h"
 using namespace http;
 #include "room_manager.h"
 using namespace room;
@@ -44,8 +45,8 @@ using namespace room;
 #include "control_data_processor.h"
 using namespace server;
 
-#include "db.h"
-using namespace db;
+// #include "db.h"
+// using namespace db;
 
 #include "config.h"
 #include "config_content.h"
@@ -108,23 +109,23 @@ std::string get_asr_type( const std::string& language_in )
   return type;
 }
 
-void write_log_to_db( translate_in* t, const std::string& trans_result )
-{
-  char time_buf_start[32];
-  strftime(time_buf_start, sizeof(time_buf_start), "%H:%M:%S", localtime((time_t*)&t->res.start_time));
-  char time_buf_end[32];
-  strftime(time_buf_end, sizeof(time_buf_end), "%H:%M:%S", localtime((time_t*)&t->res.end_time));
-  std::string log = "\"" + t->res.anchor_id + "\"," + 
-              "\"" + t->res.language_in + "\"," +
-              "\"" + t->language_out + "\"," +
-              "\"" + time_buf_start + "\"," + 
-              "\"" + time_buf_end + "\"," + 
-              "\"" + t->res.asr_result + "\"," +
-              "\"" + t->res.time.asr_start + "\",\"" + t->res.time.translate_start + "\"," + 
-              "\"" + trans_result + "\"," + 
-              "\"" + t->res.time.translate_start + "\",\"" + get_local_time() + "\"";
-  g_srv_info.mysql.insert( "log", log );
-}
+// void write_log_to_db( translate_in* t, const std::string& trans_result )
+// {
+//   char time_buf_start[32];
+//   strftime(time_buf_start, sizeof(time_buf_start), "%H:%M:%S", localtime((time_t*)&t->res.start_time));
+//   char time_buf_end[32];
+//   strftime(time_buf_end, sizeof(time_buf_end), "%H:%M:%S", localtime((time_t*)&t->res.end_time));
+//   std::string log = "\"" + t->res.anchor_id + "\"," + 
+//               "\"" + t->res.language_in + "\"," +
+//               "\"" + t->language_out + "\"," +
+//               "\"" + time_buf_start + "\"," + 
+//               "\"" + time_buf_end + "\"," + 
+//               "\"" + t->res.asr_result + "\"," +
+//               "\"" + t->res.time.asr_start + "\",\"" + t->res.time.translate_start + "\"," + 
+//               "\"" + trans_result + "\"," + 
+//               "\"" + t->res.time.translate_start + "\",\"" + get_local_time() + "\"";
+//   g_srv_info.mysql.insert( "log", log );
+// }
 
 pthread_mutex_t g_customer_info_lock;
 std::map<std::string, customer_info> g_customer_info;
@@ -178,6 +179,13 @@ void asr_process( void* param )
   }
   
   (*r->seq_num)++;
+
+  //增加纠错流程
+  http_client http;
+  correction c( &http );
+  std::string out;
+  c.correct("catering", r->result, out );
+  r->asr_result=out;
 
   r->time.translate_start=get_local_time();
   if ( r->language_out.empty() )
@@ -249,7 +257,7 @@ void translate_process( void* param )
       t->res.anchor_id.c_str(), t->res.start_time, t->res.end_time,
       t->res.asr_result.c_str(), trans_result.c_str() );
 
-  write_log_to_db( t, trans_result );
+  //write_log_to_db( t, trans_result );
 
   t->res.trans_result.insert( std::make_pair(t->language_out, trans_result) );
   std::string to_id = t->receive_id.empty()?t->res.anchor_id:t->receive_id;
@@ -705,11 +713,11 @@ int child_process()
 
   g_srv_info.svr_audio   = NULL;
   g_srv_info.audio_thrds = NULL;
-  if ( db::db::SUCCESS != g_srv_info.mysql.connect( "127.0.0.1", 0, "root", "1234", "rts" ) )
-  {
-    printf("%s\n", "connect to db failed!" );
-    return -1;
-  }
+  // if ( db::db::SUCCESS != g_srv_info.mysql.connect( "127.0.0.1", 0, "root", "1234", "rts" ) )
+  // {
+  //   printf("%s\n", "connect to db failed!" );
+  //   return -1;
+  // }
 
   pthread_mutex_init( &g_srv_info.anchor_fd_lock, NULL );
   pthread_mutex_init( &g_customer_info_lock, NULL );

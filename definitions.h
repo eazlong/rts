@@ -37,7 +37,7 @@ typedef struct
   pthread_mutex_t anchor_fd_lock;
   std::map<std::string, int> anchor_fd;
 
-  db::db mysql;
+  // db::db mysql;
 
   asr_client_manager asr_manager;
 

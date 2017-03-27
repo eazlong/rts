@@ -41,7 +41,8 @@ namespace http
 	int asr_client_keda::asr( const std::string& audio_file, std::string& out, const std::string& language_in, bool need_oauth )
 	{
 		const char*		session_id					=	NULL;
-		const char* 	session_begin_params	  	=	"sub = iat, domain = iat, language = " + language_in +", accent = mandarin, sample_rate = 8000, result_type = plain, result_encoding = utf8";
+		std::string 	session_begin_params	  	=	"sub = iat, domain = iat, language = ";
+		session_begin_params += language_in +", accent = mandarin, sample_rate = 8000, result_type = plain, result_encoding = utf8";
 		char			rec_result[BUFFER_SIZE]		=	{NULL};	
 		char			hints[HINTS_SIZE]			=	{NULL}; //hints为结束本次会话的原因描述，由用户自定义
 		unsigned int	total_len					=	0; 
@@ -86,7 +87,7 @@ namespace http
 		}
 		
 		printf("\n开始语音听写 ...\n");
-		session_id = QISRSessionBegin(NULL, session_begin_params, &errcode); //听写不需要语法，第一个参数为NULL
+		session_id = QISRSessionBegin(NULL, session_begin_params.c_str(), &errcode); //听写不需要语法，第一个参数为NULL
 		if (MSP_SUCCESS != errcode)
 		{
 			printf("\nQISRSessionBegin failed! error code:%d\n", errcode);

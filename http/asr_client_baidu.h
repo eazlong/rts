@@ -1,7 +1,6 @@
 #pragma once
 
 #include "asr_client.h"
-#include <curl/curl.h>
 #include <string>
 #include <map>
 using namespace std;
