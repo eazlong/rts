@@ -343,7 +343,7 @@ void rtmp_process( void* param )
       struct stat buf;
       if( 0 == stat( file.c_str(), &buf ) )
       {
-        if ( buf.st_size < 320 ) //文件大小小于一个音频包，不做处理，删除掉
+        if ( buf.st_size < 640 ) //文件大小小于一个音频包，不做处理，删除掉
         {
           remove( file.c_str() );
           continue;

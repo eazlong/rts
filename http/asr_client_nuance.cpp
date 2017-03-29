@@ -34,12 +34,14 @@ namespace http
 		if ( strlen( buf ) !=  0 && strcmp( buf, "\r\n" ) != 0
 			&&  strncmp( buf, "HTTP/", 5) != 0 && strchr( buf, ':') == 0 )
 		{
+			//change to format "xxxx|xxxx|xxxx"
 			char* first = strchr( buf, '\n' );
 			while ( first != NULL )
 			{
 				(*first) = '|';
 				first = strchr( first, '\n' );
 			}
+			(*first) = '\0';
 
 			std::string* result = (std::string*)userp;
 			(*result).assign(buf);
