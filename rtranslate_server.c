@@ -185,7 +185,7 @@ void asr_process( void* param )
   correction c( &http );
   std::string out;
   c.correct("catering", r->asr_result, out );
-  r->corrected_result=out;
+  r->corrected_result=out.empty()?r->asr_result:out;
 
   r->time.translate_start=get_local_time();
   if ( r->language_out.empty() )
@@ -231,7 +231,7 @@ void asr_process( void* param )
 void translate_process( void* param )
 {
   translate_in* t = (translate_in*)param;
-  LOG( log::LOGINFO, "start translate:%s\n", t->res.asr_result.c_str() );
+  LOG( log::LOGINFO, "start translate:%s\n", t->res.corrected_result.c_str() );
   std::string trans_result;
   if ( t->res.language_in != t->language_out )
   {
@@ -239,23 +239,23 @@ void translate_process( void* param )
     {
       http_client http;
       translate_client_google trans( &http, "AIzaSyDmN__Jo6IMiJ_-c2mHuVHliLiMNOK8lcg" );
-      trans.translate( t->res.asr_result, t->res.language_in, trans_result, t->language_out );  
+      trans.translate( t->res.corrected_result, t->res.language_in, trans_result, t->language_out );  
     }
     else
     {
       translate_client trans( "broadcast_trans", "11sN8ALEvHsoU7cxJVD%2f0pdvWe6mKn2YU96SUd%2f51Jc%3d" );
-      trans.translate( t->res.asr_result, t->res.language_in, trans_result, t->language_out );
+      trans.translate( t->res.corrected_result, t->res.language_in, trans_result, t->language_out );
     }
     
   }
   else
   {
-    trans_result = t->res.asr_result;
+    trans_result = t->res.corrected_result;
   }
 
   LOG( log::LOGINFO, "anchor:%s start:%ld end:%ld asr:%s translate:%s\n", 
       t->res.anchor_id.c_str(), t->res.start_time, t->res.end_time,
-      t->res.asr_result.c_str(), trans_result.c_str() );
+      t->res.corrected_result.c_str(), trans_result.c_str() );
 
   //write_log_to_db( t, trans_result );
 

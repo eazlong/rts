@@ -30,7 +30,6 @@ namespace http
 	size_t asr_client_nuance::write_callback(void *ptr, size_t size, size_t nmemb, void *userp)
 	{
 		char* buf = (char*)ptr;
-		printf( buf );
 		if ( strlen( buf ) !=  0 && strcmp( buf, "\r\n" ) != 0
 			&&  strncmp( buf, "HTTP/", 5) != 0 && strchr( buf, ':') == 0 )
 		{
@@ -38,10 +37,10 @@ namespace http
 			char* first = strchr( buf, '\n' );
 			while ( first != NULL )
 			{
-				(*first) = '|';
+				char* temp = first;
 				first = strchr( first, '\n' );
+				(*temp) = ( first == NULL?'\0':'|' );
 			}
-			(*first) = '\0';
 
 			std::string* result = (std::string*)userp;
 			(*result).assign(buf);
