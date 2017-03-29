@@ -2,11 +2,11 @@
 <config>
 	<audio_server desc="接收语音流使用的服务器设备，可以与控制服务器分开以提高语音流接收性能">
 		<device desc="语音流接收网卡设备">0.0.0.0</device>
-		<port desc="语音流接收端口">1935</port>
+		<port desc="语音流接收端口">8081</port>
 	</audio_server>
 	<control_server desc="接收控制指令使用的服务器">
 		<device desc="控制指令使用的网卡设备">0.0.0.0</device>
-		<port desc="控制指令使用的端口">1936</port>
+		<port desc="控制指令使用的端口">8082</port>
 	</control_server>
 
 	<thread>

@@ -50,6 +50,7 @@ namespace server
 	  std::string language_out;
 	  std::string file_name;
 	  std::string asr_result;
+	  std::string corrected_result;
 	  std::map<std::string, std::string> trans_result;
 	  process_time time;
 	}result;

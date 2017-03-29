@@ -227,6 +227,8 @@ namespace server
 		anchor_id->SetText( res.anchor_id.c_str() );
 		XMLElement* asr = doc.NewElement( "asr" );
 		asr->SetText( res.asr_result.c_str() );
+		XMLElement* corrected = doc.NewElement( "corrected" );
+		corrected->SetText( res.corrected_result.c_str() );
 		XMLElement* translate = doc.NewElement("translate");
 		for ( std::map<std::string, std::string>::const_iterator it=res.trans_result.begin();
 			it != res.trans_result.end(); it++ )

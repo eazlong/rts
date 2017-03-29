@@ -3,7 +3,7 @@ OBJS = realtime_translate_system.o thread.o audio_processor.o speex_audio_proces
 	rtmp_connection.o tcp_server.o thread_pool.o log.o config.o config_content.o tinyxml2.o control_data_processor.o asr_client_manager.o http_client.o room.o room_manager.o
 CC = g++
 INC = -I./audio -I./http -I../rtmpdump -I./server -I./thread -I./log -I./conf -I./xml -I./room -I./iflytek/include
-LIB = -lspeex -lspeexdsp -lpthread -lcurl -lrtmp -lmysqlclient -logg -L./iflytek/libs/x86 -lmsc
+LIB = -lspeex -lspeexdsp -lpthread -lcurl -lrtmp -logg -L./iflytek/libs/x86 -L./iflytek/libs/x64 -lmsc
 #SLIB = /home/xialang/code/rtmp/rtmpdump/librtmp/librtmp.a
 CFLAGS = -Wall -O0 -g -D_DEBUG
 TAGET = realtime_translate_system

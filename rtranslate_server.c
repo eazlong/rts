@@ -103,7 +103,7 @@ std::string get_asr_type( const std::string& language_in )
   string type = "nuance";
   if ( language_in == "en" || language_in == "zh-CHS" )
   {
-    type = "baidu";
+    //type = "baidu";
   }
 
   return type;
@@ -184,8 +184,8 @@ void asr_process( void* param )
   http_client http;
   correction c( &http );
   std::string out;
-  c.correct("catering", r->result, out );
-  r->asr_result=out;
+  c.correct("catering", r->asr_result, out );
+  r->corrected_result=out;
 
   r->time.translate_start=get_local_time();
   if ( r->language_out.empty() )
@@ -323,12 +323,12 @@ void rtmp_process( void* param )
         pthread_mutex_unlock( &g_customer_info_lock );
         continue;
       }
-      if ( it_stream->second.language == "en" || it_stream->second.language == "zh-CHS" )
+      //if ( it_stream->second.language == "en" || it_stream->second.language == "zh-CHS" )
       {
-        LOG( log::LOGINFO, "%s Set audio out type to PCM!\n", anchor_id.c_str() );
-        processor->set_out_type( audio_data_processor::PCM );
+        //LOG( log::LOGINFO, "%s Set audio out type to PCM!\n", anchor_id.c_str() );
+        //processor->set_out_type( audio_data_processor::PCM );
       }
-      else
+      //else
       {
         LOG( log::LOGINFO, "%s Set audio out type to SPEEX!\n", anchor_id.c_str() );
         processor->set_out_type( audio_data_processor::SPEEX ); 
