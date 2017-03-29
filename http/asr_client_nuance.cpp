@@ -35,7 +35,7 @@ namespace http
 			&&  strncmp( buf, "HTTP/", 5) != 0 && strchr( buf, ':') == 0 )
 		{
 			char* first = strchr( buf, '\n' );
-			if ( first != NULL )
+			while ( first != NULL )
 			{
 				(*first) = '|';
 				first = strchr( first, '\n' );
