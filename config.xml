@@ -25,7 +25,7 @@
 
 	<asr>
 		<account type="baidu" id="8402549" appid="1B0VyMpqOW44RiDGLj8fFpOk" secret_key="fd344a253bd2d309884693ff30b63854" accept_format="pcm" auth_interval="2592000" language="none"></account>
-		<account type="iflytec" id="" appid="57909a43" secret_key="" accept_format="pcm" auth_interval="2592000" language="en,cn"></account>
+		<account type="iflytec" id="" appid="57909a43" secret_key="" accept_format="pcm" auth_interval="2592000" language="en,cn,"></account>
 		<account type="nuance" id="fc2jvf7p" appid="NMDPTRIAL_yangchuang_xrrjkj_cn20160523051623" secret_key="edf3cc49b90816be770f6855efe189eef24594f8dfc4a8d07771f7106a1c9f570f6ca0c874b686ebc5ef40b5d0caa3c20f37baeefb62be72d3b5823dd12194e0" accept_format="speex" auth_interval="2592000" language="other"></account>
 	</asr>
 </config>
