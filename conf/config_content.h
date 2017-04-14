@@ -1,7 +1,9 @@
 #pragma once
 #include <string>
 #include <list>
+#include <map>
 
+typedef std::map<std::string, std::string> str_map;
 class config_content
 {
 private:
@@ -58,11 +60,11 @@ public:
 		std::string appid;
 		std::string secret_key;
 		std::string accept_format;
-		std::list<std::string> accept_languges;
 		long auth_interval;
 	}asr_account;
 	std::list<asr_account> aaccounts;
 
+	str_map asr_server;
 private:
 	static config_content* m_instance;
 };

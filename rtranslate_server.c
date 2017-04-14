@@ -52,6 +52,7 @@ using namespace server;
 #include "config.h"
 #include "config_content.h"
 #include "definitions.h"
+#include "support_languages.h"
 
 srv_info g_srv_info;
 #define LOG( LEVEL, fmt, args... )  \
@@ -81,13 +82,11 @@ std::string get_time()
 
 std::string get_asr_type( const std::string& language_in )
 {
-  string type = "nuance";
-  if ( language_in == "en" || language_in == "zh-CHS" )
-  {
-    type = "baidu";
-  }
-
-  return type;
+  str_map::iterator it = config_content::get_instance()->asr_server.find(language_in);
+  if ( it != config_content::get_instance()->asr_server.end() )
+    return it->second;
+  else
+    return config_content::get_instance()->asr_server["default"];
 }
 
 // void write_log_to_db( translate_in* t, const std::string& trans_result )
@@ -122,7 +121,7 @@ void response_result( const result& r, const std::string& to_id )
   }
   pthread_mutex_unlock(&g_srv_info.anchor_fd_lock);
 }
-
+std::map<std::string, std::map<std::string, std::string> > ALL_LANGUAGE;
 void asr_process( void* param )
 {
   result* r = (result*)param;
@@ -171,14 +170,14 @@ void asr_process( void* param )
   }
   else if ( r->language_out == "ALL" )
   {
-    for ( std::map<std::string, std::string>::iterator it=ALL_LANGUAGE.begin();
-      it != ALL_LANGUAGE.end(); it ++ )
-    {
-      translate_in *t = new translate_in;
-      t->language_out = it->first;
-      t->res = *r;
-      g_srv_info.trans_thrds->do_message( t );
-    }
+    // for ( std::map<std::string, std::string>::iterator it=ALL_LANGUAGE.begin();
+    //   it != ALL_LANGUAGE.end(); it ++ )
+    // {
+    //   translate_in *t = new translate_in;
+    //   t->language_out = it->first;
+    //   t->res = *r;
+    //   g_srv_info.trans_thrds->do_message( t );
+    // }
   }
   else
   {
@@ -288,12 +287,13 @@ void rtmp_process( void* param )
       }
 
       //如果使用nuance引擎，则要使用speex格式，百度\讯飞要使用pcm格式
-      //if ( it_stream->second.language == "en" || it_stream->second.language == "zh-CHS" )
+      std::string str = get_asr_type(it_stream->second.language);
+      if (  str.compare("nuance") != 0 )
       {
-        //LOG( log::LOGINFO, "%s Set audio out type to PCM!\n", anchor_id.c_str() );
-        //processor->set_out_type( audio_data_processor::PCM );
+        LOG( log::LOGINFO, "%s Set audio out type to PCM!\n", anchor_id.c_str() );
+        processor->set_out_type( audio_data_processor::PCM );
       }
-      //else
+      else
       {
         LOG( log::LOGINFO, "%s Set audio out type to SPEEX!\n", anchor_id.c_str() );
         processor->set_out_type( audio_data_processor::SPEEX ); 
@@ -708,7 +708,7 @@ int child_process()
   g_srv_info.log_file = &l;
   LOG( log::LOGINFO, "*****************************************System Start*****************************************\n" );
 
-  get_support_language();
+  get_support_language(ALL_LANGUAGE);
 
   while ( 1 )
   {

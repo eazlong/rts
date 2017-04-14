@@ -1,49 +1,51 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <sstream>
+#include <fstream>
+#include <iostream>
+using namespace std;
 
 void split( std::vector<std::string>& strings, std::string& str )
 {
-  std::string ss( str );
+  std::stringstream ss( str );
   while( !ss.eof() )
   {
     std::string temp;
     ss >> temp;
-    strings.push_back(temp)
+
+    strings.push_back(temp);
   }
 }
 
-std::map<std::string, std::vector<std::string>> ALL_LANGUAGE;
-void get_support_language()
+typedef std::map<std::string,std::string> string_map;
+
+void get_support_language( std::map<std::string, string_map>& languages )
 {
   ifstream fi("language");
-  std::string language_names;
   std::vector<std::string> types;
-  while ( !fi.eof() )
+  std::string line;
+  while ( getline( fi, line ) )
   {
-    std::string line = fi.getline();
-    if ( line.at(1) == '#' )
+    if ( line.at(0) == '#' )
       continue;
 
-    if ( line.at(1) == '$' )
+    if ( line.at(0) == '$' )
     {
-      split( types, line.substr( 1 ) );
+      string str = line.substr( 1 );
+      split( types, str );
       continue;
     }
     
     std::vector<std::string> abbs;
     split( abbs, line );
-    std::map<std::string,std::string> abbreviations;
+    string_map abbreviations;
     int i=0;
-    for (std::vector<std::string>::iterator it=abbs.start();
-      it!=abbs.end; it++ )
+    for (std::vector<std::string>::iterator it=abbs.begin(); it!=abbs.end(); it++, i++ )
     {
-      abbreviations.insert(std::make_pair(type[i],(*it)));
-      i++;
+      abbreviations.insert(std::make_pair(types[i],(*it)));
+      cout << types[i] << "--" << (*it) << endl;
     }
-    ALL_LANGUAGE.insert( std::make_pair(abbreviations['nuance'], abbreviations) );
-    language_names += str1 + " ";
+    languages.insert( std::make_pair(abbreviations["nuance"], abbreviations) );
   }
-
-  LOG( log::LOGINFO, "Support languages:%s\n", language_names.c_str() );
 }

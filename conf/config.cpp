@@ -2,6 +2,8 @@
 #include "config_content.h"
 #include "../xml/tinyxml2.h"
 #include <stdio.h>
+#include <sstream>
+#include <iostream>
 using namespace tinyxml2;
 
 config::config( const std::string& file )
@@ -95,17 +97,22 @@ int config::initialize()
 		asr_acc.secret_key = aa->Attribute("secret_key");
 		asr_acc.accept_format = aa->Attribute("accept_format");
 		asr_acc.auth_interval = (long)aa->IntAttribute("auth_interval");
-		// std::string str = aa->Attribute("accept_languges");
-		// if ( str.compare("none")!=0 && str.compare("other")!=0 ) 
-		// {
-		// 	std::stringstream ss( str );
-		// 	while( !ss.end() )
-		// 	{
-		// 		std::string s;
-		// 		getline( ss, s, ',');
-		// 		asr_acc.push_back( s );
-		// 	} 
-		// }
+		std::string str = aa->Attribute("language");
+		str_map &servers = config_content::get_instance()->asr_server;
+		if ( str.compare("default")==0 )
+		{
+			servers.insert(std::make_pair(str,asr_acc.type));
+		}
+		else if ( !str.empty() ) 
+		{
+			std::stringstream ss( str );
+			std::string s;
+			while( getline( ss, s, ',' ) )
+			{
+				servers.insert( std::make_pair( s, asr_acc.type ) );
+			} 
+		}
+
 		config_content::get_instance()->aaccounts.push_back( asr_acc );
 		aa = aa->NextSiblingElement( "account" );	
 	}
