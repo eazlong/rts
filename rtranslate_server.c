@@ -24,6 +24,7 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <linux/netfilter_ipv4.h>
+#include <sstream>
 
 #include "log.h"
 using namespace b_log;
@@ -50,7 +51,6 @@ using namespace server;
 
 #include "config.h"
 #include "config_content.h"
-
 #include "definitions.h"
 
 srv_info g_srv_info;
@@ -61,24 +61,6 @@ srv_info g_srv_info;
   g_srv_info.log_thrds->do_message( new log_info( buf, LEVEL ) ); \
 }
 
-std::map<std::string, std::string> ALL_LANGUAGE;
-void get_support_language()
-{
-  ifstream fi("language");
-  std::string language_names;
-  std::string str1, str2, str3;
-  while ( !fi.eof() )
-  {
-    fi >> str1 >> str2 >> str3;
-    if ( str1.at(1) == '#' )
-      continue;
-    ALL_LANGUAGE.insert( std::make_pair(str1, str2) );
-    language_names += str3 + " ";
-  }
-
-  LOG( log::LOGINFO, "Support languages:%s\n", language_names.c_str() );
-}
-
 std::string get_local_time()
 {
   time_t t = time( NULL );
@@ -87,7 +69,6 @@ std::string get_local_time()
   return buf;
 }
 
-#include <sstream>
 std::string get_time()
 {
   struct timeval tv;
@@ -103,7 +84,7 @@ std::string get_asr_type( const std::string& language_in )
   string type = "nuance";
   if ( language_in == "en" || language_in == "zh-CHS" )
   {
-    //type = "baidu";
+    type = "baidu";
   }
 
   return type;
@@ -149,25 +130,7 @@ void asr_process( void* param )
   std::string type = get_asr_type( r->language_in );
   bool need_oauth = false;
   asr_client* a = g_srv_info.asr_manager.get_client( type, need_oauth );
-  std::string l = r->language_in;
-  if ( type == "nuance" )
-  {
-    l = ALL_LANGUAGE[r->language_in];
-  }
-  else if ( type== "baidu" )
-  {
-    if ( l=="zh-CHS" )
-    {
-      l = "zh";
-    }
-  }
-  else if ( type == "iflytec" )
-  {
-    if ( l=="zh-CHS" )
-    {
-      l = "zh_cn";
-    }
-  }
+  std::string l = ALL_LANGUAGE[r->language_in][type];
   a->asr( r->file_name, r->asr_result, l, need_oauth );
   g_srv_info.asr_manager.set_client( type, a );
   LOG( log::LOGINFO, "id:%s, language:%s, asr result: %s\n", r->anchor_id.c_str(), r->language_in.c_str(), r->asr_result.c_str() );
@@ -323,6 +286,8 @@ void rtmp_process( void* param )
         pthread_mutex_unlock( &g_customer_info_lock );
         continue;
       }
+
+      //如果使用nuance引擎，则要使用speex格式，百度\讯飞要使用pcm格式
       //if ( it_stream->second.language == "en" || it_stream->second.language == "zh-CHS" )
       {
         //LOG( log::LOGINFO, "%s Set audio out type to PCM!\n", anchor_id.c_str() );
@@ -340,10 +305,11 @@ void rtmp_process( void* param )
     std::string file;
     if ( conn->get_data_processor()->get_audio_status(file) == audio_processor::COMPLETED )
     {
+      //文件大小过小时，不做处理，删除掉
       struct stat buf;
       if( 0 == stat( file.c_str(), &buf ) )
       {
-        if ( buf.st_size < 640 ) //文件大小小于一个音频包，不做处理，删除掉
+        if ( buf.st_size < 1024*5 ) 
         {
           remove( file.c_str() );
           continue;

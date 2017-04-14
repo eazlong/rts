@@ -1,32 +1,35 @@
-ar ara-XWW Arabic(International)
-ca cat-ESP Catalan
-zh-CHS cmn-CHN Mandarin(China/Simplified)
-zh-CHT cmn-TWN Mandarin(Taiwan/Traditional)
-hr hrv-HRV Croatian
-cs ces-CZE Czech
-da dan-DNK Danish
-nl nld-NLD Dutch
-en eng-USA English(US)*
-fi fin-FIN Finnish
-fr fra-FRA French(France)*
-de deu-DEU German*
-el ell-GRC Greek
-he heb-ISR Hebrew
-hi hin-IND Hindi
-hu hun-HUN Hungaria
-it ita-ITA Italian
-ja jpn-JPN Japanese
-ko kor-KOR Korean
-ms zlm-MYS Malay
-no nor-NOR Norwegian
-pl pol-POL Polish
-pt por-BRA Portuguese(Brazil)
-ro ron-ROU Romanian
-ru rus-RUS Russian
-sk slk-SVK Slovak
-es spa-ESP Spanish(Spain)
-sv swe-SWE Swedish
-th tha-THA Thai 
-tr tur-TUR Turkish
-uk ukr-UKR Ukrainian
-vi vie-VNM Vietnamese
+#	英文名称 				nuance所用缩写 	microsoft所用缩写 	百度所用缩写   讯飞所用缩写
+$    name                       nuance			microsoft           baidu		iflytec
+Arabic(International) 			ar 				ara-XWW				－			－
+Catalan 						ca 				cat-ESP				－			－
+Mandarin(China/Simplified)  	zh-CHS 			cmn-CHN				zh 			zh_cn
+Mandarin(Taiwan/Traditional) 	zh-CHT 			cmn-TWN				－			－
+Croatian 						hr 				hrv-HRV				－			－
+Czech 							cs 				ces-CZE				－			－
+Danish 							da 				dan-DNK				－			－
+Dutch 							nl 				nld-NLD				－			－
+English(US)* 					en 				eng-USA				en			en_us		
+Finnish 						fi 				fin-FIN				－			－
+French(France)* 				fr 				fra-FRA				－			－
+German* 						de 				deu-DEU				－			－
+Greek 							el 				ell-GRC				－			－
+Hebrew 							he 				heb-ISR				－			－
+Hindi 							hi 				hin-IND				－			－
+Hungaria 						hu 				hun-HUN				－			－
+Italian 						it 				ita-ITA				－			－
+Japanese 						ja 				jpn-JPN				－			－
+Korean 							ko 				kor-KOR				－			－
+Malay 							ms 				zlm-MYS				－			－
+Norwegian 						no 				nor-NOR				－			－
+Polish 							pl 				pol-POL				－			－
+Portuguese(Brazil) 				pt 				por-BRA				－			－
+Romanian 						ro 				ron-ROU				－			－
+Russian 						ru 				rus-RUS				－			－
+Slovak 							sk 				slk-SVK				－			－
+Spanish(Spain) 					es 				spa-ESP				－			－
+Swedish 						sv 				swe-SWE				－			－
+Thai  							th 				tha-THA				－			－
+Turkish 						tr 				tur-TUR				－			－
+Ukrainian 						uk 				ukr-UKR				－			－
+Vietnamese 						vi 				vie-VNM				－			－
+Cantonese						－				－					ct 			－

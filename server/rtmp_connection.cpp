@@ -453,7 +453,8 @@ namespace server
           done = false;
         }
 
-        if ( 2 == m_processor->process_audio( packet->m_body, packet->m_nBodySize ) )
+        ret = m_processor->process_audio( packet->m_body, packet->m_nBodySize );
+        if ( 2 == ret )
         {
           done = true;
         }
