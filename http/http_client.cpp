@@ -4,7 +4,8 @@
 
 namespace http
 {
-	http_client::http_client()
+	http_client::http_client( int log_level )
+	:m_log_level(log_level)
 	{
 
 	}
@@ -81,7 +82,9 @@ namespace http
 		}
 		curl_easy_setopt( m_curl, CURLOPT_URL, url.c_str() );
 		curl_easy_setopt( m_curl, CURLOPT_FOLLOWLOCATION, 1);
-		//curl_easy_setopt( m_curl, CURLOPT_VERBOSE, 1L );
+		if ( m_log_level > 0 )
+			curl_easy_setopt( m_curl, CURLOPT_VERBOSE, 1L );
+		
 		struct curl_slist *header = NULL;
 		for (string_map::const_iterator it = headers.begin(); it!=headers.end(); it++ )
 		{

@@ -143,7 +143,7 @@ void asr_process( void* param )
   (*r->seq_num)++;
 
   //增加纠错流程
-  http_client http;
+  http_client http(config_content::get_instance()->l.http_log_level);
   correction c( &http );
   std::string out;
   c.correct("catering", r->asr_result, out );

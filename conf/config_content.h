@@ -40,6 +40,7 @@ public:
 	{
 		int log_level;
 		int rtmp_log_level;
+		int http_log_level;
 		int stdout;
 		std::string file;
 	}log;

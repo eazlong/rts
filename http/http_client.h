@@ -12,7 +12,7 @@ namespace http
 	class http_client
 	{
 	public:
-		http_client();
+		http_client( int log_level );
 		virtual ~http_client();
 
 		enum result
@@ -33,5 +33,6 @@ namespace http
 
 	private:
 		CURL* m_curl;
+		int   m_log_level;
 	};
 }

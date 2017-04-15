@@ -70,6 +70,7 @@ int config::initialize()
 	XMLElement* log = root->FirstChildElement("log");
 	config_content::get_instance()->l.log_level = log->IntAttribute("level");
 	config_content::get_instance()->l.rtmp_log_level = log->IntAttribute("rtmp_log_level");
+	config_content::get_instance()->l.http_log_level = log->IntAttribute("http_log_level");
 	config_content::get_instance()->l.file = log->Attribute("file");
 	config_content::get_instance()->l.stdout = log->IntAttribute("stdout");
 

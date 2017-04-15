@@ -17,7 +17,7 @@
 
 	<audio_input desc="输入语音流的格式，目前只支持一种格式，请勿修改" format="speex" samplerate="8000"></audio_input>
 
-	<log level="6" rtmp_log_level="0" desc="0 error, 3 info, 4 debug, 6 all" file="log.txt" stdout="1"/>
+	<log level="6" rtmp_log_level="0" http_log_level="0" desc="0 error, 3 info, 4 debug, 6 all" file="log.txt" stdout="1"/>
 
 	<translate>
 		<account type="microsoft" client_id="broadcast_trans" client_secret="11sN8ALEvHsoU7cxJVD%2f0pdvWe6mKn2YU96SUd%2f51Jc%3d"></account>
