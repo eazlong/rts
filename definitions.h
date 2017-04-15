@@ -56,6 +56,7 @@ typedef struct
   std::string id;
   std::string language;
   std::string language_out;
+  bool changed;
   long start_time;
 }customer_info;
 

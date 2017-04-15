@@ -208,7 +208,6 @@ void translate_process( void* param )
       translate_client trans( "broadcast_trans", "11sN8ALEvHsoU7cxJVD%2f0pdvWe6mKn2YU96SUd%2f51Jc%3d" );
       trans.translate( t->res.corrected_result, t->res.language_in, trans_result, t->language_out );
     }
-    
   }
   else
   {
@@ -274,18 +273,19 @@ void rtmp_process( void* param )
       g_srv_info.svr_audio->close( info->client_fd );
       break;
     }
-    if ( processor->get_out_type() == audio_data_processor::NOT_SET )
+   
+    std::string anchor_id = conn->get_id();
+    pthread_mutex_lock( &g_customer_info_lock );
+    std::map<std::string,customer_info>::iterator it_stream = g_customer_info.find(anchor_id);
+    if ( it_stream == g_customer_info.end() )
     {
-      std::string anchor_id = conn->get_id();
-      pthread_mutex_lock( &g_customer_info_lock );
-      std::map<std::string,customer_info>::iterator it_stream = g_customer_info.find(anchor_id);
-      if ( it_stream == g_customer_info.end() )
-      {
-        LOG( log::LOGERROR, "%s cann't get stream info, missed start command!\n", anchor_id.c_str() );
-        pthread_mutex_unlock( &g_customer_info_lock );
-        continue;
-      }
+      LOG( log::LOGERROR, "%s cann't get stream info, missed start command!\n", anchor_id.c_str() );
+      pthread_mutex_unlock( &g_customer_info_lock );
+      continue;
+    }
 
+    if ( processor->get_out_type() == audio_data_processor::NOT_SET || it_stream.second.changed )
+    {
       //如果使用nuance引擎，则要使用speex格式，百度\讯飞要使用pcm格式
       std::string str = get_asr_type(it_stream->second.language);
       if (  str.compare("nuance") != 0 )
@@ -298,7 +298,7 @@ void rtmp_process( void* param )
         LOG( log::LOGINFO, "%s Set audio out type to SPEEX!\n", anchor_id.c_str() );
         processor->set_out_type( audio_data_processor::SPEEX ); 
       }
-      
+      it_stream.second.changed = true;
       pthread_mutex_unlock( &g_customer_info_lock );
     }
     
@@ -525,7 +525,8 @@ void* control_wait_data_thread( void* param )
           info.language = ss->get_language();
           info.language_out = ss->get_language_out();
           info.start_time = ss->get_start_time();
-          
+          info.changed = false;
+
           LOG( log::LOGINFO, "get start command form id:%s, speech language is %s, translate to %s \n",
             ss->get_id().c_str(), ss->get_language().c_str(), ss->get_language_out().c_str() );
 
@@ -548,6 +549,7 @@ void* control_wait_data_thread( void* param )
           info.language = cr->get_language();
           info.language_out = "";
           info.start_time = 0;
+          info.changed = false;
           std::map<std::string, std::string> params;
           params.insert( std::make_pair( "room_id", room_id) );
           LOG( log::LOGINFO, "get create room command form id:%s, speech language is %s, room id %s \n",
@@ -578,6 +580,7 @@ void* control_wait_data_thread( void* param )
           info.language = jr->get_language();
           info.language_out = "";
           info.start_time = 0;
+          info.changed = false;
           LOG( log::LOGINFO, "get join room command form id:%s, speech language is %s, room id is %s \n",
             jr->get_id().c_str(), jr->get_language().c_str(), jr->get_room_id().c_str() );
 
@@ -610,6 +613,7 @@ void* control_wait_data_thread( void* param )
 
           info.language = cl->get_language();
           info.language_out = cl->get_language_out();
+          info.changed = true;
           info.start_time = 0;
 
           LOG( log::LOGINFO, "%s change language to %s, out %s", cl->get_id().c_str(), 

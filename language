@@ -1,5 +1,5 @@
-#	英文名称 				nuance所用缩写 	microsoft所用缩写 	百度所用缩写   讯飞所用缩写
-$    name                       nuance			microsoft           baidu		iflytec
+#	英文名称 				microsoft所用缩写	nuance所用缩写 	 	百度所用缩写   讯飞所用缩写
+$    name                       microsoft		nuance			    baidu		iflytec
 Arabic(International) 			ar 				ara-XWW				－			－
 Catalan 						ca 				cat-ESP				－			－
 Mandarin(China/Simplified)  	zh-CHS 			cmn-CHN				zh 			zh_cn

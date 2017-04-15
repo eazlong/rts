@@ -46,6 +46,6 @@ void get_support_language( std::map<std::string, string_map>& languages )
       abbreviations.insert(std::make_pair(types[i],(*it)));
       cout << types[i] << "--" << (*it) << endl;
     }
-    languages.insert( std::make_pair(abbreviations["nuance"], abbreviations) );
+    languages.insert( std::make_pair(abbreviations["microsoft"], abbreviations) );
   }
 }
