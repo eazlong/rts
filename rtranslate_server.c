@@ -199,7 +199,7 @@ void translate_process( void* param )
   {
     if ( t->language_out == "am" ) //if the out language is amharic, use google translate
     {
-      http_client http;
+      http_client http(config_content::get_instance()->l.http_log_level);
       translate_client_google trans( &http, "AIzaSyDmN__Jo6IMiJ_-c2mHuVHliLiMNOK8lcg" );
       trans.translate( t->res.corrected_result, t->res.language_in, trans_result, t->language_out );  
     }
@@ -748,7 +748,7 @@ int child_process()
       g_srv_info.asr_manager.set_asr_account( (*it).type, (*it).id, (*it).appid, (*it).secret_key, 
         (*it).accept_format, (*it).auth_interval );
     }
-    
+    g_srv_info.asr_manager.set_log_level( config_content::get_instance()->l.http_log_level );
     const char *device = config_content::get_instance()->audio_svr.device.c_str();   // streaming device, default 0.0.0.0
     unsigned short port = config_content::get_instance()->audio_svr.port;    // port
     tcp_server svr_audio( device, port );

@@ -15,7 +15,7 @@ namespace http
 
 		asr_client* get_client( const std::string& type, bool &need_oauth );
 		void set_client( const std::string& type, asr_client* c );
-
+		void set_log_level( int log_level );
 		void set_asr_account( const std::string& type, const std::string& id, const std::string& appid,
 			const std::string& secret_key, const std::string& accept_format, long auth_interval );
 	private:
@@ -40,5 +40,7 @@ namespace http
 		pthread_mutex_t m_mutex;
 
 		bool m_created_iflytec;
+
+		int m_log_level;
 	};
 }

@@ -11,6 +11,7 @@ namespace http
 		:m_need_lock( need_lock ), m_created_iflytec( false )
 	{
 		m_need_lock?pthread_mutex_init( &m_mutex, NULL ):0;
+		m_log_level = 0;
 	}
 
 	asr_client_manager::~asr_client_manager()
@@ -18,6 +19,11 @@ namespace http
 		m_need_lock?pthread_mutex_destroy( &m_mutex ):0;
 
 		//todo: delete m_accounts m_clients
+	}
+
+	void asr_client_manager::set_log_level( int log_level )
+	{
+		m_log_level = log_level;
 	}
 
 	asr_client* asr_client_manager::get_client( const std::string& type, bool &need_oauth )
@@ -34,7 +40,7 @@ namespace http
 
 		if ( m_clients[type].empty() )
 		{
-			http_client *client = new http_client();
+			http_client *client = new http_client(m_log_level);
 			if ( type == "baidu" )
 			{
 				c = new asr_client_baidu( acc->appid, acc->secret_key, acc->id, acc->accept_format, client );	
