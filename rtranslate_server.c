@@ -284,7 +284,7 @@ void rtmp_process( void* param )
       continue;
     }
 
-    if ( processor->get_out_type() == audio_data_processor::NOT_SET || it_stream.second.changed )
+    if ( processor->get_out_type() == audio_data_processor::NOT_SET || it_stream->second.changed )
     {
       //如果使用nuance引擎，则要使用speex格式，百度\讯飞要使用pcm格式
       std::string str = get_asr_type(it_stream->second.language);
@@ -298,7 +298,7 @@ void rtmp_process( void* param )
         LOG( log::LOGINFO, "%s Set audio out type to SPEEX!\n", anchor_id.c_str() );
         processor->set_out_type( audio_data_processor::SPEEX ); 
       }
-      it_stream.second.changed = true;
+      it_stream->second.changed = true;
       pthread_mutex_unlock( &g_customer_info_lock );
     }
     

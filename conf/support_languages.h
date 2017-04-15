@@ -13,7 +13,8 @@ void split( std::vector<std::string>& strings, std::string& str )
   {
     std::string temp;
     ss >> temp;
-
+    if ( temp.empty() )
+      continue;
     strings.push_back(temp);
   }
 }
