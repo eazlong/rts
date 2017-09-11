@@ -17,7 +17,7 @@ namespace http
 
     unsigned char http_client::to_hex(unsigned char x)   
     {   
-        return  x > 9 ? x + 55 : x + 48;   
+        return  x > 9 ? x + 55 : x + 48;
     }  
       
 
@@ -61,13 +61,12 @@ namespace http
 
 			if ( encode )
 			{
-				url += it->first + "=" + url_encode(it->second) + "&";	
+				url += it->first + "=" + url_encode(it->second) + "&";
 			}
 			else
 			{
 				url += it->first + "=" + it->second + "&";
 			}
-			
 		}
 
 		m_curl = curl_easy_init();
@@ -78,13 +77,13 @@ namespace http
 		curl_easy_setopt( m_curl, CURLOPT_NOSIGNAL, 1);
 		if ( post_method )
 		{
-			curl_easy_setopt( m_curl, CURLOPT_POST, 1L );		
+			curl_easy_setopt( m_curl, CURLOPT_POST, 1L );
 		}
 		curl_easy_setopt( m_curl, CURLOPT_URL, url.c_str() );
 		curl_easy_setopt( m_curl, CURLOPT_FOLLOWLOCATION, 1);
 		if ( m_log_level > 0 )
 			curl_easy_setopt( m_curl, CURLOPT_VERBOSE, 1L );
-		
+
 		struct curl_slist *header = NULL;
 		for (string_map::const_iterator it = headers.begin(); it!=headers.end(); it++ )
 		{

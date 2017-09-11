@@ -143,11 +143,11 @@ void asr_process( void* param )
   (*r->seq_num)++;
 
   //增加纠错流程
-  http_client http(config_content::get_instance()->l.http_log_level);
-  correction c( &http );
-  std::string out;
-  c.correct("catering", r->asr_result, out );
-  r->corrected_result=out.empty()?r->asr_result:out;
+  // http_client http(config_content::get_instance()->l.http_log_level);
+  // correction c( &http );
+  // std::string out;
+  // c.correct("catering", r->asr_result, out );
+  // r->corrected_result=out.empty()?r->asr_result:out;
 
   r->time.translate_start=get_local_time();
   if ( r->language_out.empty() )
@@ -205,8 +205,11 @@ void translate_process( void* param )
     }
     else
     {
-      translate_client trans( "broadcast_trans", "11sN8ALEvHsoU7cxJVD%2f0pdvWe6mKn2YU96SUd%2f51Jc%3d" );
-      trans.translate( t->res.corrected_result, t->res.language_in, trans_result, t->language_out );
+      //translate_client trans( "broadcast_trans", "11sN8ALEvHsoU7cxJVD%2f0pdvWe6mKn2YU96SUd%2f51Jc%3d" );
+      //trans.translate( t->res.corrected_result, t->res.language_in, trans_result, t->language_out );
+      http_client http(config_content::get_instance()->l.http_log_level);
+      translate_client_youdao trans( &http, "78e8e8c06f1a76ce", "kx0SOgZJ0QllZIvjG4nOUgoqS5IdmU89" );
+      trans.translate( t->res.corrected_result, t->res.language_in, trans_result, t->language_out );  
     }
   }
   else

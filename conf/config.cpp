@@ -82,10 +82,9 @@ int config::initialize()
 		trans_acc.type = ta->Attribute("type");
 		trans_acc.client_id = ta->Attribute("client_id");
 		trans_acc.client_secret = ta->Attribute("client_secret");
-		config_content::get_instance()->taccounts.push_back( trans_acc );		
+		config_content::get_instance()->taccounts.push_back( trans_acc );
 		ta = ta->NextSiblingElement( "account" );
 	}
-	
 
 	XMLElement* asr = root->FirstChildElement("asr");
 	XMLElement* aa = asr->FirstChildElement( "account" );

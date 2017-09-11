@@ -1,6 +1,6 @@
 OBJS = realtime_translate_system.o thread.o audio_processor.o speex_audio_processor.o ogg_encode.o asr_client.o asr_client_baidu.o asr_client_nuance.o asr_client_keda.o \
 	translate_client.o translate_client_google.o audio_data_processor.o correction.o\
-	rtmp_connection.o tcp_server.o thread_pool.o log.o config.o config_content.o tinyxml2.o control_data_processor.o asr_client_manager.o http_client.o room.o room_manager.o
+	rtmp_connection.o tcp_server.o thread_pool.o md5.o translate_client_youdao.o log.o config.o config_content.o tinyxml2.o control_data_processor.o asr_client_manager.o http_client.o room.o room_manager.o
 CC = g++
 INC = -I./audio -I./http -I../rtmpdump -I./server -I./thread -I./log -I./conf -I./xml -I./room -I./iflytek/include
 LIB = -lspeex -lspeexdsp -lpthread -lcurl -lrtmp -logg -L./iflytek/libs/x86 -L./iflytek/libs/x64 -lmsc
@@ -37,6 +37,10 @@ asr_client_manager.o:http/asr_client_manager.cpp
 translate_client.o:http/translate_client.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 translate_client_google.o:http/translate_client_google.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+md5.o:http/md5.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+translate_client_youdao.o:http/translate_client_youdao.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 audio_data_processor.o:server/audio_data_processor.cpp
 	$(CC) $(CFLAGS) -c $< -o $@

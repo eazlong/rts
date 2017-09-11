@@ -21,6 +21,7 @@
 
 	<translate>
 		<account type="microsoft" client_id="broadcast_trans" client_secret="11sN8ALEvHsoU7cxJVD%2f0pdvWe6mKn2YU96SUd%2f51Jc%3d"></account>
+		<account type="youdao" client_id="78e8e8c06f1a76ce" client_secret="kx0SOgZJ0QllZIvjG4nOUgoqS5IdmU89"></account>
 	</translate>
 
 	<asr>
